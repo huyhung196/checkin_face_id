@@ -1,0 +1,252 @@
+import React from 'react';
+import { 
+  History, 
+  Search, 
+  RefreshCw, 
+  Download, 
+  Trash2, 
+  Globe, 
+  Smartphone, 
+  User, 
+  Clock, 
+  Inbox, 
+  ShieldCheck,
+  Wifi
+} from 'lucide-react';
+
+export default function LogTable({ 
+  logs = [], 
+  isLoading, 
+  onRefresh, 
+  onDelete, 
+  onImageClick, 
+  search, 
+  setSearch,
+  onExport
+}) {
+  return (
+    <div className="glass-card log-card">
+      {/* Heading */}
+      <div className="card-heading log-heading">
+        <h2 className="card-title">
+          <History size={20} color="#FD6900" />
+          <span>Nhật Ký Điểm Danh ({logs.length})</span>
+        </h2>
+
+        <div className="log-actions">
+          <button 
+            type="button" 
+            className="btn-secondary"
+            onClick={onRefresh}
+            disabled={isLoading}
+            title="Làm mới bảng log"
+          >
+            <RefreshCw size={15} className={isLoading ? 'spin-icon' : ''} />
+            <span className="hide-on-mobile">Làm mới</span>
+          </button>
+
+          <button 
+            type="button" 
+            className="btn-secondary"
+            onClick={onExport}
+            title="Xuất file Excel CSV"
+          >
+            <Download size={15} />
+            <span className="hide-on-mobile">Xuất Excel</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Toolbar tìm kiếm */}
+      <div className="table-toolbar">
+        <div className="search-box">
+          <Search size={15} className="search-icon" />
+          <input 
+            type="text" 
+            className="search-input"
+            placeholder="Tìm tên, mã NV hoặc IP..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Content */}
+      {logs.length === 0 ? (
+        <div className="empty-state">
+          <Inbox size={44} style={{ opacity: 0.4 }} />
+          <p style={{ fontWeight: 600 }}>Chưa có lượt điểm danh nào</p>
+          <p style={{ fontSize: '0.82rem', marginTop: 2 }}>
+            Nhìn vào Camera và nhấn "Chụp & Điểm Danh" để bắt đầu!
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Desktop Table View */}
+          <div className="table-responsive desktop-only">
+            <table className="log-table">
+              <thead>
+                <tr>
+                  <th>Ảnh Chụp</th>
+                  <th>Mã NV</th>
+                  <th>Họ & Tên</th>
+                  <th>Độ Khớp AI</th>
+                  <th>Thời Gian</th>
+                  <th>IP Public (WAN)</th>
+                  <th>IP LAN</th>
+                  <th>Thiết Bị</th>
+                  <th style={{ textAlign: 'center' }}>Xóa</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logs.map((row) => (
+                  <tr key={row.id}>
+                    <td>
+                      {row.photo_path ? (
+                        <img 
+                          src={row.photo_path} 
+                          alt="Snapshot" 
+                          className="table-photo-thumb"
+                          onClick={() => onImageClick(row)}
+                          title="Bấm xem ảnh to"
+                        />
+                      ) : (
+                        <div className="table-photo-thumb placeholder">
+                          <User size={18} color="#64748b" />
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      <strong style={{ color: 'var(--brand-blue)', fontFamily: 'var(--font-mono)' }}>
+                        {row.employee_code || '---'}
+                      </strong>
+                    </td>
+                    <td>
+                      <strong style={{ color: 'var(--text-main)' }}>{row.user_name}</strong>
+                    </td>
+                    <td>
+                      {row.match_confidence > 0 ? (
+                        <span className="confidence-tag">
+                          ✓ {row.match_confidence}%
+                        </span>
+                      ) : (
+                        <span className="confidence-tag unmatched">
+                          Chưa Khớp
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      <div className="log-time-cell">
+                        <Clock size={13} color="#FD6900" />
+                        <span>{row.formatted_time}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="ip-tag">
+                        <Globe size={12} />
+                        {row.public_ip}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="ip-tag local">
+                        {row.local_ip || '127.0.0.1'}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="log-device-cell">
+                        <Smartphone size={13} />
+                        <span>{row.device_info || 'Không rõ'}</span>
+                      </div>
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <button 
+                        type="button" 
+                        className="btn-del"
+                        onClick={() => onDelete(row.id)}
+                        title={`Xóa log #${row.id}`}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card List View */}
+          <div className="mobile-only log-cards-container">
+            {logs.map((row) => (
+              <div key={row.id} className="log-mobile-card">
+                <div className="log-mobile-card-top">
+                  {row.photo_path ? (
+                    <img 
+                      src={row.photo_path} 
+                      alt="Snapshot" 
+                      className="log-mobile-thumb"
+                      onClick={() => onImageClick(row)}
+                      title="Bấm xem ảnh to"
+                    />
+                  ) : (
+                    <div className="log-mobile-thumb placeholder">
+                      <User size={20} color="#94a3b8" />
+                    </div>
+                  )}
+
+                  <div className="log-mobile-info">
+                    <div className="log-mobile-user-row">
+                      <span className="log-mobile-user-name">{row.user_name}</span>
+                      {row.employee_code && (
+                        <span className="log-mobile-emp-code">({row.employee_code})</span>
+                      )}
+                    </div>
+
+                    <div className="log-mobile-meta-row">
+                      {row.match_confidence > 0 ? (
+                        <span className="confidence-tag">✓ {row.match_confidence}% Khớp</span>
+                      ) : (
+                        <span className="confidence-tag unmatched">Chưa Khớp</span>
+                      )}
+                      <span className="log-mobile-time">
+                        <Clock size={11} color="#FD6900" />
+                        {row.formatted_time}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button 
+                    type="button" 
+                    className="btn-del"
+                    onClick={() => onDelete(row.id)}
+                    title={`Xóa log #${row.id}`}
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+
+                <div className="log-mobile-card-bottom">
+                  <span className="ip-tag">
+                    <Globe size={11} />
+                    {row.public_ip}
+                  </span>
+                  {row.local_ip && (
+                    <span className="ip-tag local">
+                      <Wifi size={11} />
+                      {row.local_ip}
+                    </span>
+                  )}
+                  {row.device_info && (
+                    <span className="log-mobile-device">
+                      <Smartphone size={11} />
+                      {row.device_info}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

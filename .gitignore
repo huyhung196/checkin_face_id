@@ -1,0 +1,54 @@
+# =======================================================
+# 1. DỮ LIỆU CÁ NHÂN, KHUÔN MẶT & ẢNH (BẢO MẬT TUYỆT ĐỐI)
+# =======================================================
+# Bỏ qua toàn bộ ảnh chụp khuôn mặt, avatar nhân viên, ảnh check-in
+backend/uploads/*
+!backend/uploads/.gitkeep
+uploads/*
+**/uploads/**
+
+# Bỏ qua cơ sở dữ liệu SQLite (chứa thông tin nhân viên, vector khuôn mặt)
+backend/checkin.db
+*.db
+*.sqlite
+*.sqlite3
+
+# =======================================================
+# 2. PYTHON & MÔI TRƯỜNG ẢO
+# =======================================================
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+*.log
+
+# =======================================================
+# 3. NODE & FRONTEND BUILD
+# =======================================================
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =======================================================
+# 4. MÔI TRƯỜNG & KHÓA BẢO MẬT (ENV)
+# =======================================================
+.env
+.env.local
+.env.*.local
+*.env
+
+# =======================================================
+# 5. IDE & HỆ ĐIỀU HÀNH
+# =======================================================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
