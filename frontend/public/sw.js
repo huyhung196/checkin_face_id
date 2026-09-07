@@ -1,9 +1,7 @@
 // Service Worker cho Face ID PWA
-const CACHE_NAME = 'faceid-pwa-v3';
+const CACHE_NAME = 'faceid-pwa-v5';
 
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
   '/manifest.json',
   '/logo-icon.svg',
   '/icons/icon-192.png',
@@ -26,15 +24,14 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Không cache API calls (đảm bảo dữ liệu thời gian thực)
+  // Không bao giờ cache API calls (đảm bảo dữ liệu thời gian thực)
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(fetch(event.request));
     return;

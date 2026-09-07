@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 # ==================== EMPLOYEE SCHEMAS ====================
 
 class EmployeeCreateRequest(BaseModel):
-    employee_code: str = Field(..., description="Mã nhân viên (VD: NV001)")
+    employee_code: Optional[str] = Field(None, description="Mã nhân viên (Hệ thống tự động cấp nếu để trống)")
     full_name: str = Field(..., description="Họ và tên")
     department: Optional[str] = "Phòng Ban"
     position: Optional[str] = "Nhân viên"

@@ -4,6 +4,9 @@ export const employeeApi = {
   // Lấy danh sách nhân viên
   getAll: () => request('/employees'),
 
+  // Lấy mã nhân viên tự động kế tiếp
+  getNextCode: () => request('/employees/next-code'),
+
   // Xem chi tiết nhân viên
   getById: (id) => request(`/employees/${id}`),
 

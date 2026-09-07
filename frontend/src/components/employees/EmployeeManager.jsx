@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { UserPlus, Users, Trash2, Camera, RefreshCw, Sparkles, CheckCircle2, ShieldCheck, Phone, Briefcase, Calendar } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { UserPlus, Users, Trash2, Camera, RefreshCw, Sparkles, CheckCircle2, ShieldCheck, Phone, Briefcase, Calendar, Lock } from 'lucide-react';
 import MultiShotEnrollWizard from './MultiShotEnrollWizard';
 import DuplicateFaceModal from './DuplicateFaceModal';
 import { employeeApi } from '../../api/employeeApi';
@@ -11,6 +11,9 @@ export default function EmployeeManager({
 }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+
+  const [autoCode, setAutoCode] = useState('');
+  const [isLoadingCode, setIsLoadingCode] = useState(false);
 
   const [formData, setFormData] = useState({
     employee_code: '',
@@ -26,6 +29,39 @@ export default function EmployeeManager({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [duplicateModalInfo, setDuplicateModalInfo] = useState(null);
 
+  // Tự động tải mã nhân viên kế tiếp từ Backend
+  const fetchNextCode = useCallback(async () => {
+    setIsLoadingCode(true);
+    try {
+      const res = await employeeApi.getNextCode();
+      if (res && res.success && res.next_code) {
+        setAutoCode(res.next_code);
+        setFormData(prev => ({ ...prev, employee_code: res.next_code }));
+      }
+    } catch (err) {
+      console.warn("Lỗi khi tải mã nhân viên tự động:", err);
+      const maxNum = (employees || []).reduce((max, emp) => {
+        const matches = (emp.employee_code || '').match(/\d+/g);
+        if (matches) {
+          const n = parseInt(matches[matches.length - 1], 10);
+          return !isNaN(n) && n > max ? n : max;
+        }
+        return max;
+      }, 0);
+      const fallback = `NV${String(maxNum + 1).padStart(3, '0')}`;
+      setAutoCode(fallback);
+      setFormData(prev => ({ ...prev, employee_code: fallback }));
+    } finally {
+      setIsLoadingCode(false);
+    }
+  }, [employees]);
+
+  useEffect(() => {
+    if (showAddForm) {
+      fetchNextCode();
+    }
+  }, [showAddForm, fetchNextCode]);
+
   const handleWizardComplete = ({ descriptors, avatarImage, sampleCount }) => {
     setFaceDescriptors(descriptors);
     setAvatarImage(avatarImage);
@@ -35,15 +71,18 @@ export default function EmployeeManager({
   const handleSubmit = async (e, forceCreate = false) => {
     if (e) e.preventDefault();
 
-    if (!formData.employee_code || !formData.full_name) {
-      alert('Vui lòng điền đầy đủ Mã nhân viên và Họ tên!');
+    if (!formData.full_name || !formData.full_name.trim()) {
+      alert('Vui lòng điền Họ & Tên nhân viên!');
       return;
     }
+
+    const finalCode = formData.employee_code || autoCode;
 
     setIsSubmitting(true);
     try {
       const payload = {
         ...formData,
+        employee_code: finalCode,
         image: avatarImage,
         face_descriptors: faceDescriptors,
         force_create: forceCreate
@@ -68,6 +107,7 @@ export default function EmployeeManager({
         phone: '',
         email: ''
       });
+      setAutoCode('');
       setAvatarImage('');
       setFaceDescriptors([]);
       onRefresh();
@@ -101,7 +141,7 @@ export default function EmployeeManager({
   };
 
   return (
-    <div className="glass-card log-card">
+    <div className="card-custom">
       {/* Header Toolbar */}
       <div className="card-heading employee-heading">
         <h2 className="card-title">
@@ -145,14 +185,39 @@ export default function EmployeeManager({
           <form onSubmit={(e) => handleSubmit(e, false)}>
             <div className="employee-form-grid">
               <div className="form-group">
-                <label className="form-label">Mã Nhân Viên *</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <label className="form-label" style={{ marginBottom: 0 }}>Mã Nhân Viên</label>
+                  <span style={{ 
+                    fontSize: '0.72rem', 
+                    color: '#10b981', 
+                    background: 'rgba(16, 185, 129, 0.12)', 
+                    padding: '2px 8px', 
+                    borderRadius: 4, 
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}>
+                    <Lock size={12} /> Tự động cấp
+                  </span>
+                </div>
                 <input 
                   type="text" 
                   className="custom-input" 
-                  placeholder="VD: NV001" 
-                  required
-                  value={formData.employee_code}
-                  onChange={e => setFormData({ ...formData, employee_code: e.target.value })}
+                  readOnly
+                  disabled
+                  value={formData.employee_code || autoCode || (isLoadingCode ? 'Đang cấp mã...' : 'NV001')}
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    color: 'var(--brand-orange, #FD6900)',
+                    fontWeight: 700,
+                    fontSize: '1rem',
+                    letterSpacing: '1px',
+                    cursor: 'not-allowed',
+                    border: '1px solid rgba(253, 105, 0, 0.35)',
+                    opacity: 0.95
+                  }}
+                  title="Mã nhân viên do hệ thống tự động sinh để đảm bảo tính duy nhất, người dùng không cần chỉnh sửa"
                 />
               </div>
 

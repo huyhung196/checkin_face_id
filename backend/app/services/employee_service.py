@@ -100,9 +100,43 @@ def get_employee_by_id(emp_id: int) -> Optional[Dict[str, Any]]:
     return item
 
 
+def generate_next_employee_code() -> str:
+    """
+    Tự động sinh mã nhân viên kế tiếp chuẩn hóa (VD: NV001, NV002, ...)
+    Quét toàn bộ mã nhân viên trong DB để tìm số lớn nhất và tự động tăng lên 1.
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT employee_code FROM employees")
+    rows = cursor.fetchall()
+    conn.close()
+
+    max_num = 0
+    existing_codes = set()
+    for r in rows:
+        code = str(r["employee_code"] or "").strip().upper()
+        existing_codes.add(code)
+        digits = re.findall(r'\d+', code)
+        for d in digits:
+            try:
+                num = int(d)
+                if num > max_num:
+                    max_num = num
+            except ValueError:
+                pass
+
+    next_num = max_num + 1
+    candidate = f"NV{next_num:03d}"
+    while candidate in existing_codes:
+        next_num += 1
+        candidate = f"NV{next_num:03d}"
+
+    return candidate
+
+
 def create_employee(
-    employee_code: str,
-    full_name: str,
+    employee_code: Optional[str] = None,
+    full_name: str = "",
     department: str = "Phòng Ban",
     position: str = "Nhân viên",
     phone: str = "",
@@ -112,8 +146,13 @@ def create_employee(
     face_descriptor: Optional[List[float]] = None,
     force_create: bool = False
 ) -> Dict[str, Any]:
-    """Tạo nhân viên mới kèm kiểm tra trùng lặp khuôn mặt"""
+    """Tạo nhân viên mới kèm kiểm tra trùng lặp khuôn mặt (Tự động cấp mã nhân viên)"""
     
+    # Tự động sinh mã nếu trống hoặc người dùng không nhập
+    final_code = (employee_code or "").strip().upper()
+    if not final_code:
+        final_code = generate_next_employee_code()
+
     # Chuẩn hóa danh sách vector
     normalized_descriptors: List[List[float]] = []
     if face_descriptors and isinstance(face_descriptors, list):
@@ -149,7 +188,7 @@ def create_employee(
     cursor.execute("""
         INSERT INTO employees (employee_code, full_name, department, position, phone, email, avatar_path, face_descriptors, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (employee_code.strip().upper(), full_name.strip(), department, position, phone, email, avatar_url, desc_json, now_str))
+    """, (final_code, full_name.strip(), department, position, phone, email, avatar_url, desc_json, now_str))
 
     emp_id = cursor.lastrowid
     conn.commit()
@@ -160,7 +199,7 @@ def create_employee(
         "is_duplicate": False,
         "data": {
             "id": emp_id,
-            "employee_code": employee_code.strip().upper(),
+            "employee_code": final_code,
             "full_name": full_name.strip(),
             "department": department,
             "position": position,

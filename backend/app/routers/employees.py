@@ -5,6 +5,7 @@ from app.models import EmployeeCreateRequest, CheckDuplicateRequest, AppendDescr
 from app.services.employee_service import (
     get_all_employees,
     get_employee_by_id,
+    generate_next_employee_code,
     create_employee,
     append_employee_descriptors,
     delete_employee
@@ -12,6 +13,15 @@ from app.services.employee_service import (
 from app.services.face_service import check_for_duplicate_face
 
 router = APIRouter(prefix="/api/employees", tags=["Employees"])
+
+@router.get("/next-code")
+def get_next_code():
+    """Lấy mã nhân viên tự động sinh kế tiếp (VD: NV001, NV002, ...)"""
+    next_code = generate_next_employee_code()
+    return {
+        "success": True,
+        "next_code": next_code
+    }
 
 @router.get("")
 def list_employees():
@@ -59,13 +69,15 @@ def check_duplicate(payload: CheckDuplicateRequest):
 @router.post("")
 def create_new_employee(data: EmployeeCreateRequest):
     """
-    Đăng ký nhân viên mới (kèm kiểm tra trùng mặt và hỗ trợ chụp đa góc)
+    Đăng ký nhân viên mới (kèm kiểm tra trùng mặt và tự động cấp mã nhân viên)
     """
-    if not data.employee_code or not data.full_name:
-        raise HTTPException(status_code=400, detail="Mã nhân viên và Họ tên là bắt buộc")
+    if not data.full_name or not data.full_name.strip():
+        raise HTTPException(status_code=400, detail="Họ và tên nhân viên là bắt buộc")
+
+    emp_code = data.employee_code.strip() if (data.employee_code and data.employee_code.strip()) else generate_next_employee_code()
 
     res = create_employee(
-        employee_code=data.employee_code,
+        employee_code=emp_code,
         full_name=data.full_name,
         department=data.department or "Phòng Ban",
         position=data.position or "Nhân viên",

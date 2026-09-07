@@ -88,17 +88,31 @@ def copy_to_clipboard(text):
 def main():
     print_header()
 
-    # 0. Tự động build Frontend nếu chưa có bản build dist
+    # 0. Tự động kiểm tra và build Frontend nếu chưa có hoặc có mã nguồn mới hơn (sau khi git pull)
     dist_index = os.path.join(ROOT_DIR, "frontend", "dist", "index.html")
-    if not os.path.exists(dist_index):
-        print(f"{YELLOW}[0/3] Dang kiem tra va build Giao dien Frontend (dist)...{RESET}")
-        frontend_dir = os.path.join(ROOT_DIR, "frontend")
+    frontend_dir = os.path.join(ROOT_DIR, "frontend")
+    src_dir = os.path.join(frontend_dir, "src")
+    
+    needs_build = not os.path.exists(dist_index)
+    if not needs_build and os.path.exists(src_dir):
+        dist_mtime = os.path.getmtime(dist_index)
+        for root_path, _, files in os.walk(src_dir):
+            for f in files:
+                file_path = os.path.join(root_path, f)
+                if os.path.getmtime(file_path) > dist_mtime:
+                    needs_build = True
+                    break
+            if needs_build:
+                break
+
+    if needs_build:
+        print(f"{YELLOW}[0/3] Phat hien ma nguon Frontend moi -> Dang tu dong build lai sang dist...{RESET}")
         try:
             node_modules_dir = os.path.join(frontend_dir, "node_modules")
             if not os.path.exists(node_modules_dir):
                 print(f"{YELLOW}   -> Dang cai dat npm packages cho Frontend...{RESET}")
                 subprocess.run("npm install", cwd=frontend_dir, shell=True, check=True)
-            print(f"{YELLOW}   -> Dang biet dich Frontend sang production build (vite build)...{RESET}")
+            print(f"{YELLOW}   -> Dang bien dich Frontend sang production build (vite build)...{RESET}")
             subprocess.run("npm run build", cwd=frontend_dir, shell=True, check=True)
             print(f"{GREEN}   -> Build Frontend thanh cong!{RESET}\n")
         except Exception as e:
