@@ -19,15 +19,16 @@ from app.routers.logs import router as logs_router
 from app.routers.system import router as system_router
 from app.routers.export import router as export_router
 from app.routers.gps import router as gps_router
+from app.routers.auth import router as auth_router
 
 # 1. Khởi tạo Cơ sở dữ liệu SQLite
 init_db()
 
 # 2. Khởi tạo FastAPI App
 app = FastAPI(
-    title="Face ID AI Check-in & IP Logger API",
-    description="Hệ thống chấm công nhận diện khuôn mặt AI đa góc chụp & ghi log IP Public chuẩn Production",
-    version="3.0.0"
+    title="Face ID AI Check-in & GPS System API",
+    description="Hệ thống điểm danh nhận diện khuôn mặt AI & Phân quyền Quản trị",
+    version="3.1.0"
 )
 
 # 3. Cấu hình CORS Middleware
@@ -40,6 +41,7 @@ app.add_middleware(
 )
 
 # 4. Đăng ký tất cả các Routers
+app.include_router(auth_router)
 app.include_router(employees_router)
 app.include_router(checkin_router)
 app.include_router(logs_router)

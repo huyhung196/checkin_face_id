@@ -190,7 +190,7 @@ export default function CameraView({
   return (
     <div className="glass-card camera-card">
       <div className="card-heading">
-        <h2 className="card-title"><Camera size={18} color="#FD6900" /> Camera Face ID</h2>
+        <h2 className="card-title"><Camera size={18} color="#FD6900" /> Camera Điểm Danh</h2>
         {devices.length > 1 && (
           <button type="button" className="btn-icon" onClick={handleSwitchCamera} title="Đổi camera" style={{ width: 34, height: 34 }}>
             <SwitchCamera size={15} />
@@ -261,7 +261,7 @@ export default function CameraView({
         <button type="button" className="btn-primary camera-capture-btn" onClick={handleCaptureClick}
           disabled={isSubmitting || !!cameraError || countdown !== null}>
           <Sparkles size={16} />
-          <span>{isSubmitting ? 'Đang gửi...' : 'Chụp & Điểm Danh'}</span>
+          <span>{isSubmitting ? 'Đang điểm danh...' : 'Điểm Danh Ngay'}</span>
         </button>
         <button type="button" className={`btn-icon ${useCountdown ? 'active' : ''}`}
           onClick={() => setUseCountdown(!useCountdown)} title={useCountdown ? 'Bật hẹn giờ 3s' : 'Hẹn giờ chụp 3s'}
