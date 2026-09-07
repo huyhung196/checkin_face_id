@@ -131,6 +131,12 @@ export default function CameraView({
 
   const executeCapture = async () => {
     if (!videoRef.current || !hiddenCanvasRef.current) return;
+    const isEmpMatched = liveMatch && liveMatch.matched && liveMatch.employee;
+    if (!isEmpMatched) {
+      alert("❌ Không nhận diện được khuôn mặt nhân viên! Người lạ không được phép điểm danh.");
+      return;
+    }
+
     const video = videoRef.current;
     const canvas = hiddenCanvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -141,7 +147,6 @@ export default function CameraView({
     const imageData = canvas.toDataURL('image/jpeg', 0.90);
     setFlashActive(true); playShutterSound();
     setTimeout(() => { setFlashActive(false); playSuccessChime(); }, 120);
-    const isEmpMatched = liveMatch && liveMatch.matched && liveMatch.employee;
 
     // Lấy tọa độ GPS thiết bị hiện tại nếu có quyền
     let userLat = null, userLng = null;
@@ -163,11 +168,11 @@ export default function CameraView({
 
     onCapture({
       image: imageData,
-      employee_id: isEmpMatched ? liveMatch.employee.id : null,
-      employee_code: isEmpMatched ? liveMatch.employee.employee_code : '',
-      user_name: isEmpMatched ? liveMatch.employee.full_name : 'Người lạ',
-      match_confidence: liveMatch ? liveMatch.confidence : 0,
-      face_descriptor: liveMatch ? liveMatch.descriptor : null,
+      employee_id: liveMatch.employee.id,
+      employee_code: liveMatch.employee.employee_code || '',
+      user_name: liveMatch.employee.full_name,
+      match_confidence: liveMatch.confidence || 0,
+      face_descriptor: liveMatch.descriptor || null,
       user_lat: userLat,
       user_lng: userLng
     });
@@ -175,6 +180,12 @@ export default function CameraView({
 
   const handleCaptureClick = () => {
     if (isSubmitting || countdown !== null) return;
+    const isEmpMatched = liveMatch && liveMatch.matched && liveMatch.employee;
+    if (!isEmpMatched) {
+      alert("❌ Không nhận diện được khuôn mặt nhân viên! Người lạ không được phép điểm danh.");
+      return;
+    }
+
     if (useCountdown) {
       setCountdown(3); playBeep(500, 0.1);
       const interval = setInterval(() => {
@@ -231,15 +242,9 @@ export default function CameraView({
               </>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 6 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#006AFF', fontSize: '0.78rem', fontWeight: 600 }}>
-                  <AlertCircle size={14} /> <span>Người lạ</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#ef4444', fontSize: '0.78rem', fontWeight: 600 }}>
+                  <AlertCircle size={14} /> <span>Người lạ (Không thể điểm danh)</span>
                 </div>
-                {onOpenAddEmployee && (
-                  <button type="button" className="btn-primary" style={{ padding: '3px 8px', fontSize: '0.72rem', borderRadius: 6 }}
-                    onClick={() => onOpenAddEmployee(liveMatch.descriptor)}>
-                    <UserPlus size={11} /> Đăng Ký
-                  </button>
-                )}
               </div>
             )}
           </div>

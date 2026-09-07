@@ -4,10 +4,10 @@ import MultiShotEnrollWizard from './MultiShotEnrollWizard';
 import DuplicateFaceModal from './DuplicateFaceModal';
 import { employeeApi } from '../../api/employeeApi';
 
-export default function EmployeeManager({ 
-  employees = [], 
-  onRefresh, 
-  initialDescriptor = null 
+export default function EmployeeManager({
+  employees = [],
+  onRefresh,
+  initialDescriptor = null
 }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
@@ -150,9 +150,9 @@ export default function EmployeeManager({
         </h2>
 
         <div className="employee-actions">
-          <button 
-            type="button" 
-            className="btn-secondary" 
+          <button
+            type="button"
+            className="btn-secondary"
             onClick={onRefresh}
             title="Tải lại danh sách"
           >
@@ -160,8 +160,8 @@ export default function EmployeeManager({
             <span className="hide-on-mobile">Làm mới</span>
           </button>
 
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn-primary employee-add-btn"
             onClick={() => {
               setShowAddForm(!showAddForm);
@@ -179,7 +179,7 @@ export default function EmployeeManager({
         <div className="employee-form-container">
           <h3 className="form-section-title">
             <UserPlus size={18} />
-            <span>Đăng Ký Hồ Sơ Nhân Viên & Quét Mặt AI</span>
+            <span>Thêm Nhân Viên Mới</span>
           </h3>
 
           <form onSubmit={(e) => handleSubmit(e, false)}>
@@ -187,12 +187,12 @@ export default function EmployeeManager({
               <div className="form-group">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                   <label className="form-label" style={{ marginBottom: 0 }}>Mã Nhân Viên</label>
-                  <span style={{ 
-                    fontSize: '0.72rem', 
-                    color: '#10b981', 
-                    background: 'rgba(16, 185, 129, 0.12)', 
-                    padding: '2px 8px', 
-                    borderRadius: 4, 
+                  <span style={{
+                    fontSize: '0.72rem',
+                    color: '#10b981',
+                    background: 'rgba(16, 185, 129, 0.12)',
+                    padding: '2px 8px',
+                    borderRadius: 4,
                     fontWeight: 600,
                     display: 'flex',
                     alignItems: 'center',
@@ -201,9 +201,9 @@ export default function EmployeeManager({
                     <Lock size={12} /> Tự động cấp
                   </span>
                 </div>
-                <input 
-                  type="text" 
-                  className="custom-input" 
+                <input
+                  type="text"
+                  className="custom-input"
                   readOnly
                   disabled
                   value={formData.employee_code || autoCode || (isLoadingCode ? 'Đang cấp mã...' : 'NV001')}
@@ -217,16 +217,16 @@ export default function EmployeeManager({
                     border: '1px solid rgba(253, 105, 0, 0.35)',
                     opacity: 0.95
                   }}
-                  title="Mã nhân viên do hệ thống tự động sinh để đảm bảo tính duy nhất, người dùng không cần chỉnh sửa"
+                  title="Mã nhân viên do hệ thống tự động sinh"
                 />
               </div>
 
               <div className="form-group">
                 <label className="form-label">Họ & Tên *</label>
-                <input 
-                  type="text" 
-                  className="custom-input" 
-                  placeholder="VD: Nguyễn Văn An" 
+                <input
+                  type="text"
+                  className="custom-input"
+                  placeholder="VD: Nguyễn Văn An"
                   required
                   value={formData.full_name}
                   onChange={e => setFormData({ ...formData, full_name: e.target.value })}
@@ -235,7 +235,7 @@ export default function EmployeeManager({
 
               <div className="form-group">
                 <label className="form-label">Phòng Ban</label>
-                <select 
+                <select
                   className="custom-input"
                   value={formData.department}
                   onChange={e => setFormData({ ...formData, department: e.target.value })}
@@ -250,27 +250,24 @@ export default function EmployeeManager({
 
               <div className="form-group">
                 <label className="form-label">Số Điện Thoại</label>
-                <input 
-                  type="text" 
-                  className="custom-input" 
-                  placeholder="VD: 0987654321" 
+                <input
+                  type="text"
+                  className="custom-input"
+                  placeholder="VD: 0987654321"
                   value={formData.phone}
                   onChange={e => setFormData({ ...formData, phone: e.target.value })}
                 />
               </div>
             </div>
 
-            {/* Phần Nạp Face ID Đa Góc Mặt */}
+            {/* Phần Nạp Face ID */}
             <div className="face-enroll-section">
               <div className="face-enroll-header">
                 <div>
                   <h4 className="face-enroll-title">
                     <Sparkles size={16} />
-                    <span>Dữ Liệu Khuôn Mặt Face ID (5 Góc Tự Động)</span>
+                    <span>Dữ Liệu Khuôn Mặt</span>
                   </h4>
-                  <p className="face-enroll-desc">
-                    Quét tự động 5 góc mặt (Thẳng/Trái/Phải/Lên/Xuống) × 3 mẫu = 15 vector AI
-                  </p>
                 </div>
 
                 <button
@@ -279,7 +276,7 @@ export default function EmployeeManager({
                   onClick={() => setShowWizard(true)}
                 >
                   <Camera size={16} />
-                  <span>{faceDescriptors.length > 0 ? `Quét Lại (${faceDescriptors.length} Mẫu)` : '📸 Mở Camera Quét 5 Góc'}</span>
+                  <span>{faceDescriptors.length > 0 ? `Quét Lại (${faceDescriptors.length})` : 'Quét Khuôn Mặt'}</span>
                 </button>
               </div>
 
@@ -287,25 +284,22 @@ export default function EmployeeManager({
               {faceDescriptors.length > 0 ? (
                 <div className="enroll-success-banner">
                   {avatarImage && (
-                    <img 
-                      src={avatarImage} 
-                      alt="Avatar Preview" 
+                    <img
+                      src={avatarImage}
+                      alt="Avatar Preview"
                       className="enroll-avatar-preview"
                     />
                   )}
                   <div className="enroll-success-text">
                     <div className="enroll-success-title">
                       <CheckCircle2 size={15} color="#10b981" />
-                      <span>Đã nạp {faceDescriptors.length} mẫu khuôn mặt AI 5 góc (128D)</span>
-                    </div>
-                    <div className="enroll-success-sub">
-                      Sẵn sàng kích hoạt điểm danh Face ID độ chính xác cao.
+                      <span>Đã nạp {faceDescriptors.length} mẫu khuôn mặt</span>
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="enroll-empty-hint">
-                  Chưa có dữ liệu khuôn mặt. Bấm nút <strong>"Mở Camera Quét 5 Góc"</strong> ở trên để quét tự động!
+                  Chưa có dữ liệu khuôn mặt.
                 </div>
               )}
             </div>
@@ -323,7 +317,7 @@ export default function EmployeeManager({
                 Hủy
               </button>
               <button type="submit" className="btn-primary" disabled={isSubmitting}>
-                {isSubmitting ? 'Đang lưu...' : 'Lưu Nhân Viên & Kích Hoạt Face ID'}
+                {isSubmitting ? 'Đang lưu...' : 'Lưu Nhân Viên'}
               </button>
             </div>
           </form>
@@ -393,8 +387,8 @@ export default function EmployeeManager({
                       {emp.created_at || 'Mặc định'}
                     </td>
                     <td style={{ textAlign: 'center' }}>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         className="btn-del"
                         onClick={() => handleDelete(emp.id, emp.full_name)}
                         title={`Xóa nhân viên ${emp.full_name}`}
@@ -429,8 +423,8 @@ export default function EmployeeManager({
                     </div>
                   </div>
 
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="btn-del"
                     onClick={() => handleDelete(emp.id, emp.full_name)}
                     title={`Xóa nhân viên ${emp.full_name}`}

@@ -100,9 +100,13 @@ export default function App() {
         if (isAdmin) {
           fetchLogs();
         }
+      } else {
+        setLatestResult(null);
+        alert(`❌ ${res.message || "Không nhận diện được nhân viên! Người lạ không được phép điểm danh."}`);
       }
     } catch (err) {
       console.error("Check-in error:", err);
+      setLatestResult(null);
       alert(`❌ ${err.message || 'Lỗi khi gửi dữ liệu điểm danh'}`);
     } finally {
       setIsSubmitting(false);

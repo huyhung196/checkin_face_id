@@ -81,8 +81,25 @@ def record_checkin(
             employee_code = emp["employee_code"]
             user_name = emp["full_name"]
 
-    status = "Xác nhận đúng nhân viên" if matched_employee else "Người lạ"
-    final_name = user_name.strip() if (matched_employee and user_name and user_name.strip() not in ["", "Khách / Chưa đăng ký"]) else "Người lạ"
+    # 3.1. CHẶN NGƯỜI LẠ: Nếu không nhận diện được nhân viên -> Từ chối điểm danh, không lưu DB
+    if not matched_employee or not employee_id:
+        if photo_url:
+            full_path = os.path.join(UPLOAD_DIR, os.path.basename(photo_url))
+            if os.path.exists(full_path):
+                try:
+                    os.remove(full_path)
+                except Exception:
+                    pass
+        return {
+            "success": False,
+            "is_matched": False,
+            "message": "Không nhận diện được khuôn mặt nhân viên! Người lạ không được phép điểm danh.",
+            "employee": None,
+            "data": None
+        }
+
+    status = "Xác nhận đúng nhân viên"
+    final_name = user_name.strip()
 
     # 3.5. Đánh giá khoảng cách GPS nếu có tọa độ và cấu hình GPS mục tiêu
     gps_distance = None
@@ -118,41 +135,37 @@ def record_checkin(
     conn = get_db()
     cursor = conn.cursor()
 
-    if matched_employee and employee_id:
-        cursor.execute("""
-            SELECT timestamp, formatted_time FROM checkin_logs
-            WHERE employee_id = ? AND timestamp LIKE ?
-            ORDER BY id ASC
-        """, (employee_id, f"{today_str}%"))
-        today_logs = cursor.fetchall()
+    cursor.execute("""
+        SELECT timestamp, formatted_time FROM checkin_logs
+        WHERE employee_id = ? AND timestamp LIKE ?
+        ORDER BY id ASC
+    """, (employee_id, f"{today_str}%"))
+    today_logs = cursor.fetchall()
 
-        if len(today_logs) == 0:
-            # Lần quét đầu tiên trong ngày -> Tự động tính là Vào Ca
-            check_type = "Vào Ca"
+    if len(today_logs) == 0:
+        # Lần quét đầu tiên trong ngày -> Tự động tính là Vào Ca
+        check_type = "Vào Ca"
+        working_hours = 0.0
+        working_duration = "---"
+        success_message = f"🟢 Vào Ca thành công: {final_name} ({time_only_str})"
+    else:
+        # Lần quét tiếp theo trong ngày -> Tự động tính là Tan Ca
+        check_type = "Tan Ca"
+        first_log = today_logs[0]
+        first_ts = first_log["timestamp"]
+        first_checkin_time = first_log["formatted_time"]
+        try:
+            first_dt = datetime.fromisoformat(first_ts)
+            elapsed_secs = max(0, (now - first_dt).total_seconds())
+            hrs = int(elapsed_secs // 3600)
+            mins = int((elapsed_secs % 3600) // 60)
+            working_hours = round(elapsed_secs / 3600.0, 2)
+            working_duration = f"{hrs}h {mins}p" if hrs > 0 else f"{mins} phút"
+        except Exception:
             working_hours = 0.0
             working_duration = "---"
-            success_message = f"🟢 Vào Ca thành công: {final_name} ({time_only_str})"
-        else:
-            # Lần quét tiếp theo trong ngày -> Tự động tính là Tan Ca
-            check_type = "Tan Ca"
-            first_log = today_logs[0]
-            first_ts = first_log["timestamp"]
-            first_checkin_time = first_log["formatted_time"]
-            try:
-                first_dt = datetime.fromisoformat(first_ts)
-                elapsed_secs = max(0, (now - first_dt).total_seconds())
-                hrs = int(elapsed_secs // 3600)
-                mins = int((elapsed_secs % 3600) // 60)
-                working_hours = round(elapsed_secs / 3600.0, 2)
-                working_duration = f"{hrs}h {mins}p" if hrs > 0 else f"{mins} phút"
-            except Exception:
-                working_hours = 0.0
-                working_duration = "---"
 
-            success_message = f"🔴 Tan Ca thành công: {final_name} ({time_only_str}) - Đã làm: {working_duration}"
-    else:
-        check_type = "Người lạ"
-        success_message = f"Đã lưu ảnh và ghi log điểm danh cho: {final_name}"
+        success_message = f"🔴 Tan Ca thành công: {final_name} ({time_only_str}) - Đã làm: {working_duration}"
 
     cursor.execute("""
         INSERT INTO checkin_logs (
