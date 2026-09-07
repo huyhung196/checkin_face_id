@@ -31,10 +31,28 @@ class AppendDescriptorsRequest(BaseModel):
 
 class CheckinRequest(BaseModel):
     image: str = Field(..., description="Ảnh chụp khuôn mặt Base64")
-    public_ip: Optional[str] = ""
     user_name: Optional[str] = ""
     employee_id: Optional[int] = None
     employee_code: Optional[str] = ""
     match_confidence: Optional[float] = 0.0
-    face_descriptor: Optional[List[float]] = None
     face_descriptors: Optional[List[List[float]]] = None
+    face_descriptor: Optional[List[float]] = None
+    user_lat: Optional[float] = None
+    user_lng: Optional[float] = None
+
+# ==================== GPS SCHEMAS ====================
+
+class GpsSettingsRequest(BaseModel):
+    location_name: Optional[str] = "Văn Phòng Công Ty"
+    latitude: float = Field(..., description="Vĩ độ GPS mục tiêu")
+    longitude: float = Field(..., description="Kinh độ GPS mục tiêu")
+    radius_meters: float = Field(100.0, description="Bán kính cho phép (mètres)")
+
+
+class GpsCheckinRequest(BaseModel):
+    user_lat: float = Field(..., description="Vĩ độ thiết bị hiện tại")
+    user_lng: float = Field(..., description="Kinh độ thiết bị hiện tại")
+    user_name: Optional[str] = "Người dùng"
+    employee_id: Optional[int] = None
+    employee_code: Optional[str] = ""
+

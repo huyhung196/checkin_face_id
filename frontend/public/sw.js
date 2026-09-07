@@ -1,5 +1,5 @@
 // Service Worker cho Face ID PWA
-const CACHE_NAME = 'faceid-pwa-v1';
+const CACHE_NAME = 'faceid-pwa-v3';
 
 const STATIC_ASSETS = [
   '/',
@@ -40,8 +40,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache First cho các model AI và static assets
-  if (url.pathname.startsWith('/models/') || url.pathname.startsWith('/assets/')) {
+  // Cache First riêng cho AI models weights (vì kích thước lớn và không đổi)
+  if (url.pathname.startsWith('/models/')) {
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
         if (cachedResponse) {

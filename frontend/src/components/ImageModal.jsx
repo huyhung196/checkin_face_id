@@ -44,16 +44,9 @@ export default function ImageModal({ item, onClose }) {
           </div>
 
           <div className="modal-meta-item">
-            <div className="modal-meta-label">Địa Chỉ IP Public (WAN)</div>
-            <div className="modal-meta-value" style={{ color: 'var(--brand-orange)' }}>
-              {item.public_ip}
-            </div>
-          </div>
-
-          <div className="modal-meta-item">
-            <div className="modal-meta-label">Địa Chỉ IP Client (LAN)</div>
-            <div className="modal-meta-value" style={{ color: 'var(--brand-blue)' }}>
-              {item.local_ip || '127.0.0.1'}
+            <div className="modal-meta-label">Trạng Thái GPS</div>
+            <div className="modal-meta-value" style={{ color: item.gps_matched === 1 ? '#10b981' : item.gps_matched === 0 ? '#e11d48' : 'var(--text-muted)' }}>
+              {item.gps_status || '---'}
             </div>
           </div>
 

@@ -60,12 +60,13 @@ def match_live_face_against_database(
 
     if best_match and best_distance < threshold:
         confidence = max(0.0, min(100.0, round((1.0 - best_distance / 0.6) * 100, 1)))
-        return {
-            "matched": True,
-            "employee": best_match,
-            "distance": round(best_distance, 4),
-            "confidence": confidence
-        }
+        if confidence >= 50.0:
+            return {
+                "matched": True,
+                "employee": best_match,
+                "distance": round(best_distance, 4),
+                "confidence": confidence
+            }
 
     return {
         "matched": False,

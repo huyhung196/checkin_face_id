@@ -22,6 +22,6 @@ LOGO_FILE = os.path.join(PROJECT_ROOT, "logo-icon.svg")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # AI Recognition Thresholds
-FACE_MATCH_THRESHOLD = 0.50        # Euclidean distance < 0.50 is recognized as employee
+FACE_MATCH_THRESHOLD = 0.40        # Euclidean distance < 0.40 is recognized as employee
 DUPLICATE_FACE_THRESHOLD = 0.45    # Euclidean distance < 0.45 warns of duplicate face
-MAX_DESCRIPTORS_PER_EMPLOYEE = 6   # Multi-shot samples (front, left, right, smile, etc.)
+MAX_DESCRIPTORS_PER_EMPLOYEE = 25  # Multi-shot samples (5 angles × 5 per angle)

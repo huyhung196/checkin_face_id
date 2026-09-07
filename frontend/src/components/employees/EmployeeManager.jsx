@@ -201,10 +201,10 @@ export default function EmployeeManager({
                 <div>
                   <h4 className="face-enroll-title">
                     <Sparkles size={16} />
-                    <span>Dữ Liệu Khuôn Mặt Face ID (Đa Góc Chụp)</span>
+                    <span>Dữ Liệu Khuôn Mặt Face ID (5 Góc Tự Động)</span>
                   </h4>
                   <p className="face-enroll-desc">
-                    Chụp 1-4 góc giúp tỷ lệ nhận diện &gt;99%
+                    Quét tự động 5 góc mặt (Thẳng/Trái/Phải/Lên/Xuống) × 3 mẫu = 15 vector AI
                   </p>
                 </div>
 
@@ -214,7 +214,7 @@ export default function EmployeeManager({
                   onClick={() => setShowWizard(true)}
                 >
                   <Camera size={16} />
-                  <span>{faceDescriptors.length > 0 ? `Chụp Lại (${faceDescriptors.length} Mẫu)` : '📸 Mở Camera Quét Mặt'}</span>
+                  <span>{faceDescriptors.length > 0 ? `Quét Lại (${faceDescriptors.length} Mẫu)` : '📸 Mở Camera Quét 5 Góc'}</span>
                 </button>
               </div>
 
@@ -231,7 +231,7 @@ export default function EmployeeManager({
                   <div className="enroll-success-text">
                     <div className="enroll-success-title">
                       <CheckCircle2 size={15} color="#10b981" />
-                      <span>Đã nạp {faceDescriptors.length} góc mẫu khuôn mặt AI (128D)</span>
+                      <span>Đã nạp {faceDescriptors.length} mẫu khuôn mặt AI 5 góc (128D)</span>
                     </div>
                     <div className="enroll-success-sub">
                       Sẵn sàng kích hoạt điểm danh Face ID độ chính xác cao.
@@ -240,7 +240,7 @@ export default function EmployeeManager({
                 </div>
               ) : (
                 <div className="enroll-empty-hint">
-                  Chưa có dữ liệu khuôn mặt. Bấm nút <strong>"Mở Camera Quét Mặt"</strong> ở trên để nạp dữ liệu!
+                  Chưa có dữ liệu khuôn mặt. Bấm nút <strong>"Mở Camera Quét 5 Góc"</strong> ở trên để quét tự động!
                 </div>
               )}
             </div>

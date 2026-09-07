@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Camera, Users, History, Clock, Globe, Wifi } from 'lucide-react';
+import { Camera, Users, History, Clock, MapPin } from 'lucide-react';
 import CameraView from './components/CameraView';
 import EmployeeManager from './components/employees/EmployeeManager';
 import LogTable from './components/LogTable';
@@ -7,21 +7,20 @@ import StatsOverview from './components/StatsOverview';
 import CheckinResult from './components/CheckinResult';
 import ImageModal from './components/ImageModal';
 import PwaInstallPrompt from './components/PwaInstallPrompt';
+import GpsCheckinView from './components/GpsCheckinView';
+import MiniGpsCard from './components/MiniGpsCard';
 
 import { employeeApi } from './api/employeeApi';
 import { checkinApi } from './api/checkinApi';
 import { logsApi } from './api/logsApi';
 import { systemApi } from './api/systemApi';
-import { usePublicIp } from './hooks/usePublicIp';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('scanner'); // 'scanner' | 'employees' | 'logs'
+  const [activeTab, setActiveTab] = useState('scanner'); // 'scanner' | 'employees' | 'logs' | 'gps'
   const [employees, setEmployees] = useState([]);
   const [logs, setLogs] = useState([]);
   const [stats, setStats] = useState({ today_count: 0, total_count: 0, total_employees: 0 });
   const [currentTime, setCurrentTime] = useState(new Date());
-
-  const { publicIp, localIp } = usePublicIp();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
@@ -73,10 +72,7 @@ export default function App() {
   const handleCheckinCapture = async (payload) => {
     setIsSubmitting(true);
     try {
-      const res = await checkinApi.submit({
-        ...payload,
-        public_ip: publicIp || payload.public_ip
-      });
+      const res = await checkinApi.submit(payload);
 
       if (res.success && res.data) {
         setLatestResult(res.data);
@@ -125,22 +121,12 @@ export default function App() {
         <div className="header-brand">
           <img src="/logo-icon.svg" alt="Project Logo" className="brand-logo-img" />
           <div>
-            <h1 className="brand-title">Face ID AI Check-in & IP Logger</h1>
-            <div className="brand-subtitle">Hệ thống điểm danh nhận diện khuôn mặt AI & Lưu nhật ký IP Public (Production)</div>
+            <h1 className="brand-title">Face ID AI Check-in & GPS</h1>
+            <div className="brand-subtitle">Hệ thống điểm danh nhận diện khuôn mặt AI & Định vị GPS chuẩn Production</div>
           </div>
         </div>
 
         <div className="header-meta">
-          <div className="meta-chip public-ip">
-            <span className="dot-pulse"></span>
-            <span>WAN: {publicIp || 'Đang lấy...'}</span>
-          </div>
-
-          <div className="meta-chip local-ip">
-            <Wifi size={14} />
-            <span>LAN: {localIp || '127.0.0.1'}</span>
-          </div>
-
           <div className="meta-chip">
             <Clock size={14} color="var(--brand-orange)" />
             <span>
@@ -158,7 +144,7 @@ export default function App() {
           onClick={() => setActiveTab('scanner')}
         >
           <Camera size={18} />
-          Camera Điểm Danh Face ID
+          Camera Điểm Danh Face ID & GPS
         </button>
 
         <button 
@@ -172,6 +158,15 @@ export default function App() {
 
         <button 
           type="button" 
+          className={`tab-btn ${activeTab === 'gps' ? 'active' : ''}`}
+          onClick={() => setActiveTab('gps')}
+        >
+          <MapPin size={18} />
+          Cấu Hình GPS
+        </button>
+
+        <button 
+          type="button" 
           className={`tab-btn ${activeTab === 'logs' ? 'active' : ''}`}
           onClick={() => setActiveTab('logs')}
         >
@@ -181,7 +176,7 @@ export default function App() {
       </div>
 
       {/* Stats Summary */}
-      <StatsOverview stats={stats} publicIp={publicIp} localIp={localIp} />
+      <StatsOverview stats={stats} />
 
       {/* Tab 1: Scanner View */}
       {activeTab === 'scanner' && (
@@ -191,13 +186,13 @@ export default function App() {
               employees={employees}
               onCapture={handleCheckinCapture}
               isSubmitting={isSubmitting}
-              publicIp={publicIp}
               onOpenAddEmployee={handleOpenAddEmployeeWithFace}
             />
             <CheckinResult result={latestResult} onImageClick={setModalItem} />
           </div>
 
           <div>
+            <MiniGpsCard onOpenGpsSetup={() => setActiveTab('gps')} />
             <LogTable 
               logs={logs}
               isLoading={isLoadingLogs}
@@ -221,7 +216,14 @@ export default function App() {
         />
       )}
 
-      {/* Tab 3: Detailed Logs */}
+      {/* Tab 3: GPS Check-in */}
+      {activeTab === 'gps' && (
+        <GpsCheckinView 
+          employees={employees}
+        />
+      )}
+
+      {/* Tab 4: Detailed Logs */}
       {activeTab === 'logs' && (
         <LogTable 
           logs={logs}
@@ -246,8 +248,17 @@ export default function App() {
             className={`mobile-nav-btn ${activeTab === 'scanner' ? 'active' : ''}`}
             onClick={() => setActiveTab('scanner')}
           >
-            <Camera size={22} />
+            <Camera size={20} />
             <span>Điểm Danh</span>
+          </button>
+
+          <button 
+            type="button" 
+            className={`mobile-nav-btn ${activeTab === 'gps' ? 'active' : ''}`}
+            onClick={() => setActiveTab('gps')}
+          >
+            <MapPin size={20} />
+            <span>GPS</span>
           </button>
 
           <button 
@@ -255,7 +266,7 @@ export default function App() {
             className={`mobile-nav-btn ${activeTab === 'employees' ? 'active' : ''}`}
             onClick={() => setActiveTab('employees')}
           >
-            <Users size={22} />
+            <Users size={20} />
             <span>Nhân Viên</span>
           </button>
 
@@ -264,7 +275,7 @@ export default function App() {
             className={`mobile-nav-btn ${activeTab === 'logs' ? 'active' : ''}`}
             onClick={() => setActiveTab('logs')}
           >
-            <History size={22} />
+            <History size={20} />
             <span>Nhật Ký</span>
           </button>
         </div>

@@ -35,7 +35,7 @@ if os.name == 'nt':
 
 def print_header():
     print(f"\n{ORANGE}{BOLD}======================================================================{RESET}")
-    print(f"{ORANGE}{BOLD}   >>> FACE ID AI CHECK-IN & IP LOGGER - CLOUDFLARE HOSTING SERVER   {RESET}")
+    print(f"{ORANGE}{BOLD}   >>> FACE ID AI CHECK-IN & GPS - CLOUDFLARE HOSTING SERVER          {RESET}")
     print(f"{ORANGE}{BOLD}======================================================================{RESET}")
     print(f"  {BOLD}* Local URL     :{RESET} {GREEN}http://localhost:8000{RESET}")
     print(f"  {BOLD}* Cloudflare WAN:{RESET} {YELLOW}Dang khoi tao duong truyen HTTPS bao mat...{RESET}")
@@ -62,7 +62,7 @@ def stream_logs(pipe, prefix=""):
         pass
 
 def wait_for_cloudflare_dns(url, max_retries=15):
-    """Chờ cho đến khi Cloudflare DNS cập nhật xong trên toàn cầu (khoảng 4-6 giây)"""
+    """Chờ cho đến khi Cloudflare DNS cập nhật xong trên toàn cầu"""
     print(f"{YELLOW}[*] Dang ket noi mang Cloudflare toan cau cho link: {CYAN}{url}{RESET}")
     print(f"{YELLOW}    (Vui long doi 4-6 giay de DNS Cloudflare cap nhat xong)...{RESET}")
     
@@ -88,10 +88,18 @@ def copy_to_clipboard(text):
 def main():
     print_header()
 
-    # 1. Khởi động FastAPI Backend
-    print(f"{YELLOW}[1/3] Dang khoi dong Backend FastAPI tren cong 8000...{RESET}")
+    # 1. Khởi động FastAPI Backend (Ưu tiên dùng môi trường venv nếu có)
+    python_bin = sys.executable
+    venv_python = os.path.join(ROOT_DIR, "venv", "Scripts", "python.exe")
+    dot_venv_python = os.path.join(ROOT_DIR, ".venv", "Scripts", "python.exe")
+    if os.path.exists(venv_python):
+        python_bin = venv_python
+    elif os.path.exists(dot_venv_python):
+        python_bin = dot_venv_python
+
+    print(f"{YELLOW}[1/3] Dang khoi dong Backend FastAPI tren cong 8000 ({python_bin})...{RESET}")
     backend_cmd = [
-        sys.executable, "-m", "uvicorn", "main:app", 
+        python_bin, "-m", "uvicorn", "main:app", 
         "--host", "0.0.0.0", 
         "--port", "8000", 
         "--log-level", "info"
@@ -108,61 +116,79 @@ def main():
         errors='replace'
     )
 
-    # 2. Khởi động Cloudflared Tunnel
+    # 2. Khởi động Cloudflared Tunnel (nếu có)
     print(f"{YELLOW}[2/3] Dang ket noi Cloudflare Tunnel...{RESET}")
-    cloudflared_cmd = ["cloudflared", "tunnel", "--no-autoupdate", "--url", "http://127.0.0.1:8000"]
     
-    cloudflared_process = subprocess.Popen(
-        cloudflared_cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        bufsize=1,
-        encoding='utf-8',
-        errors='replace'
-    )
+    # Tìm executable cloudflared trong hệ thống
+    cloudflared_bin = "cloudflared"
+    pf_path = r"C:\Program Files\cloudflared\cloudflared.exe"
+    pf86_path = r"C:\Program Files (x86)\cloudflared\cloudflared.exe"
+    if os.path.exists(pf_path):
+        cloudflared_bin = pf_path
+    elif os.path.exists(pf86_path):
+        cloudflared_bin = pf86_path
 
-    public_url = None
-    url_pattern = re.compile(r"https://[a-zA-Z0-9-]+\.trycloudflare\.com")
+    cloudflared_cmd = [cloudflared_bin, "tunnel", "--no-autoupdate", "--url", "http://127.0.0.1:8000"]
+    cloudflared_process = None
 
-    def monitor_cloudflared(pipe):
-        nonlocal public_url
-        for line in iter(pipe.readline, ''):
-            if not line:
-                break
-            line_str = line.strip()
-            match = url_pattern.search(line_str)
-            if match and not public_url:
-                public_url = match.group(0)
-                
-                # Chờ DNS Cloudflare sẵn sàng 100% trước khi thông báo
-                threading.Thread(target=on_url_detected, args=(public_url,), daemon=True).start()
+    try:
+        cloudflared_process = subprocess.Popen(
+            cloudflared_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,
+            encoding='utf-8',
+            errors='replace'
+        )
 
-    def on_url_detected(url):
-        is_ready = wait_for_cloudflare_dns(url)
-        copy_to_clipboard(url)
+        public_url = None
+        url_pattern = re.compile(r"https://[a-zA-Z0-9-]+\.trycloudflare\.com")
 
-        print(f"\n{GREEN}{BOLD}======================================================================{RESET}")
-        print(f"{GREEN}{BOLD}   [OK] CLOUDFLARE PUBLIC HTTPS URL DA SAN SANG 100%!                {RESET}")
-        print(f"{GREEN}{BOLD}======================================================================{RESET}")
-        print(f"  >> Link truy cap tu xa / Dien thoai:")
-        print(f"     {CYAN}{BOLD}{url}{RESET}")
-        print(f"  >> Link noi bo (Local):")
-        print(f"     {GREEN}{BOLD}http://localhost:8000{RESET}")
-        print(f"  {YELLOW}(Da tu dong copy link Cloudflare vao Clipboard de paste){RESET}")
-        print(f"{GREEN}{BOLD}======================================================================{RESET}")
+        def monitor_cloudflared(pipe):
+            nonlocal public_url
+            for line in iter(pipe.readline, ''):
+                if not line:
+                    break
+                line_str = line.strip()
+                match = url_pattern.search(line_str)
+                if match and not public_url:
+                    public_url = match.group(0)
+                    threading.Thread(target=on_url_detected, args=(public_url,), daemon=True).start()
+
+        def on_url_detected(url):
+            copy_to_clipboard(url)
+
+            print(f"\n{GREEN}{BOLD}======================================================================{RESET}")
+            print(f"{GREEN}{BOLD}   [OK] CLOUDFLARE PUBLIC HTTPS URL DA DUOC TAO THANH CONG!          {RESET}")
+            print(f"{GREEN}{BOLD}======================================================================{RESET}")
+            print(f"  >> Link mo tren DIEN THOAI / MAY KHAC (Copy gui zalo/mess):")
+            print(f"     {CYAN}{BOLD}{url}{RESET}")
+            print(f"  >> Link mo tren MAY TINH NAY (Local):")
+            print(f"     {GREEN}{BOLD}http://localhost:8000{RESET}")
+            print(f"  {YELLOW}(Da tu dong copy link Cloudflare HTTPS vao Clipboard){RESET}")
+            print(f"{GREEN}{BOLD}======================================================================{RESET}")
+            print(f"{BLUE}--- LIVE LOGS DANG GHI TRUC TIEP DUOI DAY (Nhan Ctrl+C de dung): ---{RESET}\n")
+
+            # Mở localhost:8000 trên máy tính này để truy cập tức thì 100% không bị chờ DNS nhà mạng
+            try:
+                webbrowser.open("http://localhost:8000")
+            except:
+                pass
+
+        t_cf_err = threading.Thread(target=monitor_cloudflared, args=(cloudflared_process.stderr,), daemon=True)
+        t_cf_out = threading.Thread(target=monitor_cloudflared, args=(cloudflared_process.stdout,), daemon=True)
+        t_cf_err.start()
+        t_cf_out.start()
+
+    except Exception:
+        print(f"{YELLOW}[!] May chua cai đat hoac chua co tool 'cloudflared'.{RESET}")
+        print(f"{GREEN}[3/3] Dang chay che do Local Server: http://localhost:8000{RESET}")
         print(f"{BLUE}--- LIVE LOGS DANG GHI TRUC TIEP DUOI DAY (Nhan Ctrl+C de dung): ---{RESET}\n")
-
-        # Tự động mở trình duyệt với URL khi đã sẵn sàng 100%
         try:
-            webbrowser.open(url)
-        except:
             webbrowser.open("http://localhost:8000")
-
-    t_cf_err = threading.Thread(target=monitor_cloudflared, args=(cloudflared_process.stderr,), daemon=True)
-    t_cf_out = threading.Thread(target=monitor_cloudflared, args=(cloudflared_process.stdout,), daemon=True)
-    t_cf_err.start()
-    t_cf_out.start()
+        except:
+            pass
 
     # Luồng hiển thị log của server
     t_server = threading.Thread(target=stream_logs, args=(server_process.stdout, f"{BLUE}[API]{RESET}"), daemon=True)
@@ -170,12 +196,13 @@ def main():
 
     # Xử lý đóng an toàn khi bấm Ctrl+C
     def cleanup(signum=None, frame=None):
-        print(f"\n{YELLOW}Dang dung may chu va huy Cloudflare tunnel...{RESET}")
-        try:
-            cloudflared_process.terminate()
-            cloudflared_process.kill()
-        except:
-            pass
+        print(f"\n{YELLOW}Dang dung may chu va Cloudflare tunnel...{RESET}")
+        if cloudflared_process:
+            try:
+                cloudflared_process.terminate()
+                cloudflared_process.kill()
+            except:
+                pass
         try:
             server_process.terminate()
             server_process.kill()

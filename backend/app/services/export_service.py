@@ -19,8 +19,7 @@ def generate_attendance_csv() -> tuple[io.BytesIO, str]:
         "Mã Nhân Viên", 
         "Họ Tên", 
         "Độ Khớp AI (%)", 
-        "IP Mạng Public (WAN)", 
-        "IP Nội Bộ (LAN)", 
+        "Khớp GPS", 
         "Trạng Thái", 
         "Thiết Bị & Trình Duyệt", 
         "Đường Dẫn Ảnh"
@@ -33,8 +32,7 @@ def generate_attendance_csv() -> tuple[io.BytesIO, str]:
             row.get("employee_code", "") or "---",
             row["user_name"],
             f"{row.get('match_confidence', 0)}%",
-            row["public_ip"],
-            row.get("local_ip", "") or "127.0.0.1",
+            row.get("gps_status", "---"),
             row["status"],
             row["device_info"],
             row["photo_path"]

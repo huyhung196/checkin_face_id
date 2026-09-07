@@ -18,6 +18,7 @@ from app.routers.checkin import router as checkin_router
 from app.routers.logs import router as logs_router
 from app.routers.system import router as system_router
 from app.routers.export import router as export_router
+from app.routers.gps import router as gps_router
 
 # 1. Khởi tạo Cơ sở dữ liệu SQLite
 init_db()
@@ -44,6 +45,7 @@ app.include_router(checkin_router)
 app.include_router(logs_router)
 app.include_router(system_router)
 app.include_router(export_router)
+app.include_router(gps_router)
 
 # 5. Phục vụ thư mục tệp tĩnh (Static Files)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
@@ -89,6 +91,7 @@ def get_logo():
 
 
 @app.get("/")
+@app.get("/index.html")
 def serve_spa():
     index_file = os.path.join(FRONTEND_DIST, "index.html")
     if os.path.exists(index_file):

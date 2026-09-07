@@ -4,7 +4,7 @@ import { CheckCircle2, Globe, Clock, User, ShieldCheck, AlertCircle } from 'luci
 export default function CheckinResult({ result, onImageClick }) {
   if (!result) return null;
 
-  const isMatched = result.match_confidence > 0 || (result.employee_code && result.employee_code !== '');
+  const isMatched = (result.match_confidence >= 50.0) && Boolean(result.employee_code);
 
   return (
     <div className="result-banner" style={{
@@ -39,18 +39,23 @@ export default function CheckinResult({ result, onImageClick }) {
         <div style={{ fontSize: '0.9rem', color: 'var(--text-main)', marginTop: 4 }}>
           <strong>{result.user_name}</strong> 
           {result.employee_code && <span style={{ color: 'var(--brand-blue)', marginLeft: 6, fontWeight: 700 }}>({result.employee_code})</span>}
-          {result.match_confidence > 0 && (
+          {result.match_confidence >= 50.0 && (
             <span className="confidence-tag" style={{ marginLeft: 8 }}>
               {result.match_confidence}% Khớp
             </span>
           )}
+          {result.gps_matched === 1 ? (
+            <span className="confidence-tag" style={{ marginLeft: 8, background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
+              ✓ GPS Đạt ({result.gps_distance}m)
+            </span>
+          ) : result.gps_matched === 0 ? (
+            <span className="confidence-tag unmatched" style={{ marginLeft: 8, background: 'rgba(225, 29, 72, 0.15)', color: '#e11d48' }}>
+              ❌ GPS Vi Phạm ({result.gps_distance}m)
+            </span>
+          ) : null}
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
-          <span className="ip-tag">
-            <Globe size={12} />
-            Public IP: {result.public_ip}
-          </span>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
             <Clock size={12} />
             {result.formatted_time}

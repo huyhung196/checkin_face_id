@@ -7,7 +7,6 @@ export default function CameraView({
   employees = [], 
   onCapture, 
   isSubmitting, 
-  publicIp = '',
   onOpenAddEmployee
 }) {
   const videoRef = useRef(null);
@@ -83,9 +82,10 @@ export default function CameraView({
           const ctx = canvas.getContext('2d');
           if (canvas.width !== vW || canvas.height !== vH) { canvas.width = vW; canvas.height = vH; }
           ctx.clearRect(0, 0, canvas.width, canvas.height);
-          const matchResult = matchLiveFace(faceResult.descriptor, employees, 0.50);
+          const matchResult = matchLiveFace(faceResult.descriptor, employees, 0.40);
+          const isRealMatch = Boolean(matchResult && matchResult.matched && matchResult.employee && matchResult.confidence >= 50.0);
           const { x, y, width, height } = faceResult.box;
-          ctx.strokeStyle = matchResult.matched ? '#FD6900' : '#006AFF';
+          ctx.strokeStyle = isRealMatch ? '#FD6900' : '#006AFF';
           ctx.lineWidth = 3;
           const r = 6;
           ctx.beginPath();
@@ -98,10 +98,14 @@ export default function CameraView({
           ctx.lineTo(x, y + r);
           ctx.quadraticCurveTo(x, y, x + r, y);
           ctx.stroke();
-          const currentMatchId = matchResult.matched && matchResult.employee ? matchResult.employee.id : 'unmatched';
+          const currentMatchId = isRealMatch ? matchResult.employee.id : 'unmatched';
           if (lastMatchIdRef.current !== currentMatchId) {
             lastMatchIdRef.current = currentMatchId;
-            setLiveMatch({ ...matchResult, descriptor: faceResult.descriptor, box: faceResult.box });
+            if (isRealMatch) {
+              setLiveMatch({ ...matchResult, descriptor: faceResult.descriptor, box: faceResult.box });
+            } else {
+              setLiveMatch({ matched: false, employee: null, confidence: 0, descriptor: faceResult.descriptor, box: faceResult.box });
+            }
           }
         } else {
           if (lastMatchIdRef.current !== null) { lastMatchIdRef.current = null; setLiveMatch(null); }
@@ -138,13 +142,34 @@ export default function CameraView({
     setFlashActive(true); playShutterSound();
     setTimeout(() => { setFlashActive(false); playSuccessChime(); }, 120);
     const isEmpMatched = liveMatch && liveMatch.matched && liveMatch.employee;
+
+    // Lấy tọa độ GPS thiết bị hiện tại nếu có quyền
+    let userLat = null, userLng = null;
+    if (navigator.geolocation) {
+      try {
+        const pos = await new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(resolve, () => resolve(null), {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+          });
+        });
+        if (pos && pos.coords) {
+          userLat = pos.coords.latitude;
+          userLng = pos.coords.longitude;
+        }
+      } catch (e) { /* ignored */ }
+    }
+
     onCapture({
-      image: imageData, public_ip: publicIp,
+      image: imageData,
       employee_id: isEmpMatched ? liveMatch.employee.id : null,
       employee_code: isEmpMatched ? liveMatch.employee.employee_code : '',
-      user_name: isEmpMatched ? liveMatch.employee.full_name : 'Khách / Chưa đăng ký',
+      user_name: isEmpMatched ? liveMatch.employee.full_name : 'Người lạ',
       match_confidence: liveMatch ? liveMatch.confidence : 0,
-      face_descriptor: liveMatch ? liveMatch.descriptor : null
+      face_descriptor: liveMatch ? liveMatch.descriptor : null,
+      user_lat: userLat,
+      user_lng: userLng
     });
   };
 
@@ -207,7 +232,7 @@ export default function CameraView({
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 6 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#006AFF', fontSize: '0.78rem', fontWeight: 600 }}>
-                  <AlertCircle size={14} /> <span>Chưa đăng ký</span>
+                  <AlertCircle size={14} /> <span>Người lạ</span>
                 </div>
                 {onOpenAddEmployee && (
                   <button type="button" className="btn-primary" style={{ padding: '3px 8px', fontSize: '0.72rem', borderRadius: 6 }}

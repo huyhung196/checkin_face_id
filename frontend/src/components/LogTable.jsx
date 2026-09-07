@@ -64,7 +64,7 @@ export default function LogTable({
           <input 
             type="text" 
             className="search-input"
-            placeholder="Tìm tên, mã NV hoặc IP..."
+            placeholder="Tìm tên hoặc mã NV..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -91,9 +91,8 @@ export default function LogTable({
                   <th>Mã NV</th>
                   <th>Họ & Tên</th>
                   <th>Độ Khớp AI</th>
+                  <th>Khớp GPS</th>
                   <th>Thời Gian</th>
-                  <th>IP Public (WAN)</th>
-                  <th>IP LAN</th>
                   <th>Thiết Bị</th>
                   <th style={{ textAlign: 'center' }}>Xóa</th>
                 </tr>
@@ -125,14 +124,27 @@ export default function LogTable({
                       <strong style={{ color: 'var(--text-main)' }}>{row.user_name}</strong>
                     </td>
                     <td>
-                      {row.match_confidence > 0 ? (
+                      {row.match_confidence >= 50.0 ? (
                         <span className="confidence-tag">
                           ✓ {row.match_confidence}%
                         </span>
                       ) : (
                         <span className="confidence-tag unmatched">
-                          Chưa Khớp
+                          Người Lạ
                         </span>
+                      )}
+                    </td>
+                    <td>
+                      {row.gps_matched === 1 ? (
+                        <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
+                          ✓ Đạt ({row.gps_distance}m)
+                        </span>
+                      ) : row.gps_matched === 0 ? (
+                        <span className="confidence-tag unmatched" style={{ background: 'rgba(225, 29, 72, 0.15)', color: '#e11d48' }} title={`Khoảng cách ${row.gps_distance}m (Bán kính ${row.gps_radius}m)`}>
+                          ❌ Vi Phạm ({row.gps_distance}m)
+                        </span>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>---</span>
                       )}
                     </td>
                     <td>
@@ -140,17 +152,6 @@ export default function LogTable({
                         <Clock size={13} color="#FD6900" />
                         <span>{row.formatted_time}</span>
                       </div>
-                    </td>
-                    <td>
-                      <span className="ip-tag">
-                        <Globe size={12} />
-                        {row.public_ip}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="ip-tag local">
-                        {row.local_ip || '127.0.0.1'}
-                      </span>
                     </td>
                     <td>
                       <div className="log-device-cell">
@@ -202,11 +203,16 @@ export default function LogTable({
                     </div>
 
                     <div className="log-mobile-meta-row">
-                      {row.match_confidence > 0 ? (
+                      {row.match_confidence >= 50.0 ? (
                         <span className="confidence-tag">✓ {row.match_confidence}% Khớp</span>
                       ) : (
-                        <span className="confidence-tag unmatched">Chưa Khớp</span>
+                        <span className="confidence-tag unmatched">Người Lạ</span>
                       )}
+                      {row.gps_matched === 1 ? (
+                        <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>✓ GPS Đạt</span>
+                      ) : row.gps_matched === 0 ? (
+                        <span className="confidence-tag unmatched" style={{ background: 'rgba(225, 29, 72, 0.15)', color: '#e11d48' }}>❌ GPS Vi Phạm</span>
+                      ) : null}
                       <span className="log-mobile-time">
                         <Clock size={11} color="#FD6900" />
                         {row.formatted_time}
@@ -224,24 +230,14 @@ export default function LogTable({
                   </button>
                 </div>
 
-                <div className="log-mobile-card-bottom">
-                  <span className="ip-tag">
-                    <Globe size={11} />
-                    {row.public_ip}
-                  </span>
-                  {row.local_ip && (
-                    <span className="ip-tag local">
-                      <Wifi size={11} />
-                      {row.local_ip}
-                    </span>
-                  )}
-                  {row.device_info && (
+                {row.device_info && (
+                  <div className="log-mobile-card-bottom">
                     <span className="log-mobile-device">
                       <Smartphone size={11} />
                       {row.device_info}
                     </span>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

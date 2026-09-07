@@ -43,6 +43,49 @@ def init_db():
         match_confidence REAL DEFAULT 0.0,
         status TEXT DEFAULT 'Success',
         device_info TEXT DEFAULT 'Không rõ',
+        user_agent TEXT,
+        user_lat REAL,
+        user_lng REAL,
+        gps_distance REAL,
+        gps_radius REAL,
+        gps_matched INTEGER,
+        gps_status TEXT
+    )
+    """)
+
+    # 3. Bảng cấu hình tọa độ GPS mục tiêu & Bán kính
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS gps_settings (
+        id INTEGER PRIMARY KEY DEFAULT 1,
+        location_name TEXT DEFAULT 'Văn Phòng Công Ty',
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        radius_meters REAL DEFAULT 100.0,
+        is_configured INTEGER DEFAULT 1,
+        updated_at TEXT
+    )
+    """)
+
+    # 4. Bảng nhật ký điểm danh GPS (GPS Check-in Logs)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS gps_checkin_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT NOT NULL,
+        formatted_time TEXT NOT NULL,
+        user_name TEXT DEFAULT 'Người dùng',
+        employee_id INTEGER,
+        employee_code TEXT,
+        user_lat REAL NOT NULL,
+        user_lng REAL NOT NULL,
+        target_lat REAL NOT NULL,
+        target_lng REAL NOT NULL,
+        distance_meters REAL NOT NULL,
+        radius_meters REAL NOT NULL,
+        is_valid INTEGER DEFAULT 0,
+        status TEXT NOT NULL,
+        public_ip TEXT,
+        local_ip TEXT,
+        device_info TEXT,
         user_agent TEXT
     )
     """)
@@ -65,6 +108,18 @@ def init_db():
         cursor.execute("ALTER TABLE checkin_logs ADD COLUMN employee_code TEXT")
     if "match_confidence" not in log_columns:
         cursor.execute("ALTER TABLE checkin_logs ADD COLUMN match_confidence REAL DEFAULT 0.0")
+    if "user_lat" not in log_columns:
+        cursor.execute("ALTER TABLE checkin_logs ADD COLUMN user_lat REAL")
+    if "user_lng" not in log_columns:
+        cursor.execute("ALTER TABLE checkin_logs ADD COLUMN user_lng REAL")
+    if "gps_distance" not in log_columns:
+        cursor.execute("ALTER TABLE checkin_logs ADD COLUMN gps_distance REAL")
+    if "gps_radius" not in log_columns:
+        cursor.execute("ALTER TABLE checkin_logs ADD COLUMN gps_radius REAL")
+    if "gps_matched" not in log_columns:
+        cursor.execute("ALTER TABLE checkin_logs ADD COLUMN gps_matched INTEGER")
+    if "gps_status" not in log_columns:
+        cursor.execute("ALTER TABLE checkin_logs ADD COLUMN gps_status TEXT")
 
     conn.commit()
     conn.close()
