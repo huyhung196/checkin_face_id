@@ -1,0 +1,12 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.git
+.github
+node_modules
+frontend/node_modules
+frontend/dist
+backend/checkin.db
+backend/uploads/*
+!backend/uploads/.gitkeep

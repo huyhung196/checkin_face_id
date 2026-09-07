@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: checkin-face-id
+    runtime: python
+    region: singapore
+    plan: free
+    buildCommand: "cd frontend && npm install && npm run build && cd .. && pip install -r backend/requirements.txt"
+    startCommand: "python -m uvicorn main:app --app-dir backend --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: NODE_VERSION
+        value: 20.12.2
