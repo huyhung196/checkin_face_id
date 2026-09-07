@@ -4,9 +4,9 @@ from datetime import datetime
 from typing import List, Dict, Any
 from app.services.checkin_service import get_checkin_logs
 
-def generate_attendance_csv() -> tuple[io.BytesIO, str]:
+def generate_attendance_csv(date_filter: str = "") -> tuple[io.BytesIO, str]:
     """Tạo file CSV UTF-8 BOM chuẩn tiếng Việt cho Excel"""
-    result = get_checkin_logs(limit=10000)
+    result = get_checkin_logs(limit=10000, date_filter=date_filter)
     logs = result["logs"]
 
     output = io.StringIO()

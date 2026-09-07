@@ -11,7 +11,8 @@ import {
   Clock, 
   Inbox, 
   ShieldCheck,
-  Wifi
+  Wifi,
+  Calendar
 } from 'lucide-react';
 
 export default function LogTable({ 
@@ -22,8 +23,12 @@ export default function LogTable({
   onImageClick, 
   search, 
   setSearch,
+  selectedDate = '',
+  setSelectedDate,
   onExport
 }) {
+  const todayStr = new Date().toISOString().slice(0, 10);
+
   return (
     <div className="glass-card log-card">
       {/* Heading */}
@@ -57,7 +62,7 @@ export default function LogTable({
         </div>
       </div>
 
-      {/* Toolbar tìm kiếm */}
+      {/* Toolbar tìm kiếm & lọc ngày */}
       <div className="table-toolbar">
         <div className="search-box">
           <Search size={15} className="search-icon" />
@@ -69,16 +74,60 @@ export default function LogTable({
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+
+        <div className="date-filter-group">
+          <div className="date-filter-box">
+            <Calendar size={14} className="date-icon" />
+            <input 
+              type="date" 
+              className="date-input"
+              value={selectedDate || ''}
+              onChange={(e) => setSelectedDate && setSelectedDate(e.target.value)}
+              title="Chọn ngày cần lọc"
+            />
+          </div>
+
+          <button 
+            type="button" 
+            className={`btn-date-chip ${selectedDate === todayStr ? 'active' : ''}`}
+            onClick={() => setSelectedDate && setSelectedDate(todayStr)}
+            title="Xem điểm danh hôm nay"
+          >
+            Hôm nay
+          </button>
+
+          {selectedDate && (
+            <button 
+              type="button" 
+              className="btn-date-chip clear"
+              onClick={() => setSelectedDate && setSelectedDate('')}
+              title="Xem tất cả các ngày"
+            >
+              Tất cả
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Content */}
       {logs.length === 0 ? (
         <div className="empty-state">
           <Inbox size={44} style={{ opacity: 0.4 }} />
-          <p style={{ fontWeight: 600 }}>Chưa có lượt điểm danh nào</p>
-          <p style={{ fontSize: '0.82rem', marginTop: 2 }}>
-            Nhìn vào Camera và nhấn "Chụp & Điểm Danh" để bắt đầu!
+          <p style={{ fontWeight: 600 }}>
+            {selectedDate 
+              ? `Không có lượt điểm danh nào trong ngày ${selectedDate}` 
+              : 'Chưa có lượt điểm danh nào'}
           </p>
+          {selectedDate && (
+            <button 
+              type="button" 
+              className="btn-secondary" 
+              style={{ marginTop: 8, fontSize: '0.8rem' }}
+              onClick={() => setSelectedDate && setSelectedDate('')}
+            >
+              Xóa bộ lọc ngày
+            </button>
+          )}
         </div>
       ) : (
         <>

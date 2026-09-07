@@ -34,6 +34,7 @@ export default function App() {
   const [latestResult, setLatestResult] = useState(null);
   const [modalItem, setModalItem] = useState(null);
   const [search, setSearch] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
   const [initialEnrollDescriptor, setInitialEnrollDescriptor] = useState(null);
 
   // Cập nhật đồng hồ thời gian thực
@@ -68,7 +69,7 @@ export default function App() {
   const fetchLogs = useCallback(async () => {
     setIsLoadingLogs(true);
     try {
-      const res = await logsApi.getLogs({ search });
+      const res = await logsApi.getLogs({ search, date: selectedDate });
       setLogs(res.data || []);
       setStats({
         today_count: res.today_count || 0,
@@ -80,7 +81,7 @@ export default function App() {
     } finally {
       setIsLoadingLogs(false);
     }
-  }, [search]);
+  }, [search, selectedDate]);
 
   useEffect(() => {
     fetchEmployees();
@@ -145,7 +146,7 @@ export default function App() {
 
   // Xuất file CSV (Admin)
   const handleExport = () => {
-    window.open(systemApi.getExportUrl(), '_blank');
+    window.open(systemApi.getExportUrl(selectedDate), '_blank');
   };
 
   // Chuyển sang tab thêm nhân viên khi phát hiện khuôn mặt chưa đăng ký (Admin)
@@ -355,6 +356,8 @@ export default function App() {
           onImageClick={setModalItem}
           search={search}
           setSearch={setSearch}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
           onExport={handleExport}
         />
       )}

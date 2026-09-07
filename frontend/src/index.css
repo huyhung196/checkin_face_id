@@ -475,18 +475,66 @@ body {
 .log-heading { flex-wrap: wrap; gap: 8px; }
 .log-actions { display: flex; gap: 8px; align-items: center; }
 
-.table-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-.search-box { position: relative; width: 100%; }
-.search-icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; }
+.table-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.search-box { position: relative; flex: 1; min-width: 220px; }
+.search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; }
 .search-input { 
   width: 100%; 
-  padding: 7px 10px 7px 30px; 
+  padding: 8px 12px 8px 32px; 
   border-radius: 8px; 
   background: #fff; 
   border: 1px solid var(--border-card); 
   font-size: 0.82rem; 
   outline: none; 
   font-family: var(--font-family); 
+}
+.search-input:focus { border-color: var(--brand-orange); box-shadow: 0 0 0 3px rgba(253,105,0,0.15); }
+
+.date-filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.date-filter-box { position: relative; display: flex; align-items: center; }
+.date-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; }
+.date-input {
+  padding: 7px 10px 7px 30px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid var(--border-card);
+  font-size: 0.82rem;
+  font-family: var(--font-family);
+  color: var(--text-main);
+  outline: none;
+  cursor: pointer;
+}
+.date-input:focus { border-color: var(--brand-orange); box-shadow: 0 0 0 3px rgba(253,105,0,0.15); }
+
+.btn-date-chip {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid var(--border-card);
+  background: #f8fafc;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-date-chip:hover {
+  background: #fff;
+  border-color: var(--brand-orange);
+  color: var(--brand-orange);
+}
+.btn-date-chip.active {
+  background: rgba(253, 105, 0, 0.12);
+  border-color: var(--brand-orange);
+  color: var(--brand-orange);
+}
+.btn-date-chip.clear {
+  background: #f1f5f9;
+  color: #64748b;
+}
+.btn-date-chip.clear:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  border-color: #fca5a5;
 }
 
 .table-responsive { 
@@ -1247,7 +1295,11 @@ body {
 
   /* Log Card */
   .log-card { padding: 8px; gap: 8px; border-radius: 12px; }
-  .table-toolbar { gap: 6px; }
+  .table-toolbar { flex-direction: column; align-items: stretch; gap: 8px; }
+  .search-box { width: 100%; min-width: unset; }
+  .date-filter-group { width: 100%; justify-content: space-between; }
+  .date-filter-box { flex: 1; }
+  .date-input { width: 100%; }
 
   /* Result Banner */
   .result-banner { padding: 8px 10px; gap: 8px; border-radius: 8px; }
