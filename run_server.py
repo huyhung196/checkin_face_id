@@ -88,6 +88,22 @@ def copy_to_clipboard(text):
 def main():
     print_header()
 
+    # 0. Tự động build Frontend nếu chưa có bản build dist
+    dist_index = os.path.join(ROOT_DIR, "frontend", "dist", "index.html")
+    if not os.path.exists(dist_index):
+        print(f"{YELLOW}[0/3] Dang kiem tra va build Giao dien Frontend (dist)...{RESET}")
+        frontend_dir = os.path.join(ROOT_DIR, "frontend")
+        try:
+            node_modules_dir = os.path.join(frontend_dir, "node_modules")
+            if not os.path.exists(node_modules_dir):
+                print(f"{YELLOW}   -> Dang cai dat npm packages cho Frontend...{RESET}")
+                subprocess.run("npm install", cwd=frontend_dir, shell=True, check=True)
+            print(f"{YELLOW}   -> Dang biet dich Frontend sang production build (vite build)...{RESET}")
+            subprocess.run("npm run build", cwd=frontend_dir, shell=True, check=True)
+            print(f"{GREEN}   -> Build Frontend thanh cong!{RESET}\n")
+        except Exception as e:
+            print(f"{RED}   -> Warning: Khong the build Frontend tu dong ({e}){RESET}\n")
+
     # 1. Khởi động FastAPI Backend (Ưu tiên dùng môi trường venv nếu có)
     python_bin = sys.executable
     venv_python = os.path.join(ROOT_DIR, "venv", "Scripts", "python.exe")
@@ -98,6 +114,7 @@ def main():
         python_bin = dot_venv_python
 
     print(f"{YELLOW}[1/3] Dang khoi dong Backend FastAPI tren cong 8000 ({python_bin})...{RESET}")
+
     backend_cmd = [
         python_bin, "-m", "uvicorn", "main:app", 
         "--host", "0.0.0.0", 
