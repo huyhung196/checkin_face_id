@@ -49,7 +49,10 @@ def init_db():
         gps_distance REAL,
         gps_radius REAL,
         gps_matched INTEGER,
-        gps_status TEXT
+        gps_status TEXT,
+        check_type TEXT DEFAULT 'Vào Ca',
+        working_hours REAL DEFAULT 0.0,
+        working_duration TEXT
     )
     """)
 
@@ -120,6 +123,12 @@ def init_db():
         cursor.execute("ALTER TABLE checkin_logs ADD COLUMN gps_matched INTEGER")
     if "gps_status" not in log_columns:
         cursor.execute("ALTER TABLE checkin_logs ADD COLUMN gps_status TEXT")
+    if "check_type" not in log_columns:
+        cursor.execute("ALTER TABLE checkin_logs ADD COLUMN check_type TEXT DEFAULT 'Vào Ca'")
+    if "working_hours" not in log_columns:
+        cursor.execute("ALTER TABLE checkin_logs ADD COLUMN working_hours REAL DEFAULT 0.0")
+    if "working_duration" not in log_columns:
+        cursor.execute("ALTER TABLE checkin_logs ADD COLUMN working_duration TEXT")
 
     conn.commit()
     conn.close()

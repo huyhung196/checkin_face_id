@@ -103,26 +103,72 @@ def record_checkin(
         else:
             gps_status = "Chưa cài GPS mục tiêu"
 
-    # 4. Ghi log vào Database
+    # 4. Xác định loại điểm danh (Vào Ca / Tan Ca) theo quy tắc Lần đầu là Vào – Lần cuối là Ra
     now = datetime.now()
     timestamp = now.isoformat()
     formatted_time = now.strftime("%H:%M:%S - %d/%m/%Y")
+    time_only_str = now.strftime("%H:%M:%S")
+    today_str = now.strftime("%Y-%m-%d")
+
+    check_type = "Vào Ca"
+    working_hours = 0.0
+    working_duration = "---"
+    first_checkin_time = None
 
     conn = get_db()
     cursor = conn.cursor()
+
+    if matched_employee and employee_id:
+        cursor.execute("""
+            SELECT timestamp, formatted_time FROM checkin_logs
+            WHERE employee_id = ? AND timestamp LIKE ?
+            ORDER BY id ASC
+        """, (employee_id, f"{today_str}%"))
+        today_logs = cursor.fetchall()
+
+        if len(today_logs) == 0:
+            # Lần quét đầu tiên trong ngày -> Tự động tính là Vào Ca
+            check_type = "Vào Ca"
+            working_hours = 0.0
+            working_duration = "---"
+            success_message = f"🟢 Vào Ca thành công: {final_name} ({time_only_str})"
+        else:
+            # Lần quét tiếp theo trong ngày -> Tự động tính là Tan Ca
+            check_type = "Tan Ca"
+            first_log = today_logs[0]
+            first_ts = first_log["timestamp"]
+            first_checkin_time = first_log["formatted_time"]
+            try:
+                first_dt = datetime.fromisoformat(first_ts)
+                elapsed_secs = max(0, (now - first_dt).total_seconds())
+                hrs = int(elapsed_secs // 3600)
+                mins = int((elapsed_secs % 3600) // 60)
+                working_hours = round(elapsed_secs / 3600.0, 2)
+                working_duration = f"{hrs}h {mins}p" if hrs > 0 else f"{mins} phút"
+            except Exception:
+                working_hours = 0.0
+                working_duration = "---"
+
+            success_message = f"🔴 Tan Ca thành công: {final_name} ({time_only_str}) - Đã làm: {working_duration}"
+    else:
+        check_type = "Người lạ"
+        success_message = f"Đã lưu ảnh và ghi log điểm danh cho: {final_name}"
+
     cursor.execute("""
         INSERT INTO checkin_logs (
             timestamp, formatted_time, public_ip, local_ip, photo_path, 
             employee_id, employee_code, user_name, match_confidence, 
             status, device_info, user_agent,
-            user_lat, user_lng, gps_distance, gps_radius, gps_matched, gps_status
+            user_lat, user_lng, gps_distance, gps_radius, gps_matched, gps_status,
+            check_type, working_hours, working_duration
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         timestamp, formatted_time, public_ip, local_ip, photo_url,
         employee_id, employee_code, final_name, match_confidence or 0.0,
         status, device_info, user_agent,
-        user_lat, user_lng, gps_distance, gps_radius, gps_matched, gps_status
+        user_lat, user_lng, gps_distance, gps_radius, gps_matched, gps_status,
+        check_type, working_hours, working_duration
     ))
 
     log_id = cursor.lastrowid
@@ -132,7 +178,7 @@ def record_checkin(
     return {
         "success": True,
         "is_matched": bool(matched_employee),
-        "message": f"Điểm danh thành công: {final_name} ({match_confidence}%)" if matched_employee else f"Đã lưu ảnh và ghi log điểm danh cho: {final_name}",
+        "message": success_message,
         "employee": matched_employee,
         "data": {
             "id": log_id,
@@ -150,7 +196,11 @@ def record_checkin(
             "gps_distance": gps_distance,
             "gps_radius": gps_radius,
             "gps_matched": gps_matched,
-            "gps_status": gps_status
+            "gps_status": gps_status,
+            "check_type": check_type,
+            "working_hours": working_hours,
+            "working_duration": working_duration,
+            "first_checkin_time": first_checkin_time
         }
     }
 

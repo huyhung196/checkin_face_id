@@ -90,6 +90,7 @@ export default function LogTable({
                   <th>Ảnh Chụp</th>
                   <th>Mã NV</th>
                   <th>Họ & Tên</th>
+                  <th>Loại Ca</th>
                   <th>Độ Khớp AI</th>
                   <th>Khớp GPS</th>
                   <th>Thời Gian</th>
@@ -122,6 +123,26 @@ export default function LogTable({
                     </td>
                     <td>
                       <strong style={{ color: 'var(--text-main)' }}>{row.user_name}</strong>
+                    </td>
+                    <td>
+                      {row.check_type === 'Tan Ca' ? (
+                        <div>
+                          <span className="confidence-tag" style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#ef4444', fontWeight: 700 }}>
+                            🔴 Tan Ca
+                          </span>
+                          {row.working_duration && row.working_duration !== '---' && (
+                            <div style={{ fontSize: '0.72rem', color: '#d97706', marginTop: 3, fontWeight: 600 }}>
+                              ⏱️ {row.working_duration}
+                            </div>
+                          )}
+                        </div>
+                      ) : row.check_type === 'Vào Ca' ? (
+                        <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', fontWeight: 700 }}>
+                          🟢 Vào Ca
+                        </span>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>---</span>
+                      )}
                     </td>
                     <td>
                       {row.match_confidence >= 50.0 ? (
@@ -203,6 +224,15 @@ export default function LogTable({
                     </div>
 
                     <div className="log-mobile-meta-row">
+                      {row.check_type === 'Tan Ca' ? (
+                        <span className="confidence-tag" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', fontWeight: 700 }}>
+                          🔴 Tan Ca {row.working_duration && row.working_duration !== '---' ? `(${row.working_duration})` : ''}
+                        </span>
+                      ) : row.check_type === 'Vào Ca' ? (
+                        <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontWeight: 700 }}>
+                          🟢 Vào Ca
+                        </span>
+                      ) : null}
                       {row.match_confidence >= 50.0 ? (
                         <span className="confidence-tag">✓ {row.match_confidence}% Khớp</span>
                       ) : (
