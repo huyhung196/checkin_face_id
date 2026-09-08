@@ -56,3 +56,19 @@ class GpsCheckinRequest(BaseModel):
     employee_id: Optional[int] = None
     employee_code: Optional[str] = ""
 
+
+# ==================== SHIFT & ATTENDANCE SCHEMAS ====================
+
+class ShiftSettingsRequest(BaseModel):
+    shift_name: Optional[str] = "Ca Hành Chính Mebieco"
+    start_time: str = Field("08:00", description="Giờ bắt đầu ca chuẩn (HH:MM)")
+    end_time: str = Field("17:30", description="Giờ kết thúc ca chuẩn (HH:MM)")
+    grace_period_minutes: Optional[int] = Field(15, description="Số phút ân hạn cho phép trễ")
+    early_leave_buffer_minutes: Optional[int] = Field(0, description="Số phút cho phép về sớm")
+
+
+class PermissionUpdateRequest(BaseModel):
+    has_permission: bool = Field(..., description="Đã có xin phép hay chưa")
+    permission_note: Optional[str] = Field("", description="Ghi chú lý do xin phép")
+    updated_by: Optional[str] = Field("Admin", description="Người phê duyệt (HR/Admin)")
+

@@ -10,6 +10,8 @@ import PwaInstallPrompt from './components/PwaInstallPrompt';
 import GpsCheckinView from './components/GpsCheckinView';
 import MiniGpsCard from './components/MiniGpsCard';
 import AdminLoginModal from './components/AdminLoginModal';
+import ShiftSetupModal from './components/ShiftSetupModal';
+import PermissionModal from './components/PermissionModal';
 
 import { employeeApi } from './api/employeeApi';
 import { checkinApi } from './api/checkinApi';
@@ -36,6 +38,9 @@ export default function App() {
   const [modalItem, setModalItem] = useState(null);
   const [search, setSearch] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
+  const [attendanceFilter, setAttendanceFilter] = useState('all'); // 'all' | 'unexcused' | 'late' | 'early' | 'excused'
+  const [showShiftModal, setShowShiftModal] = useState(false);
+  const [permissionModalItem, setPermissionModalItem] = useState(null);
   const [initialEnrollDescriptor, setInitialEnrollDescriptor] = useState(null);
 
   // Cập nhật đồng hồ thời gian thực
@@ -66,14 +71,21 @@ export default function App() {
     }
   }, []);
 
-  // Tải danh sách log điểm danh (chỉ cần khi là Admin)
+  // Tải danh sách log điểm danh kết hợp lọc đa chiều (ngày, trạng thái chấm công, từ khóa)
   const fetchLogs = useCallback(async (isSilent = false) => {
     if (!isSilent) setIsLoadingLogs(true);
     try {
-      const res = await logsApi.getLogs({ search, date: selectedDate });
+      const res = await logsApi.getLogs({ 
+        search, 
+        date: selectedDate,
+        attendance_filter: attendanceFilter !== 'all' ? attendanceFilter : ''
+      });
       setLogs(res.data || []);
       setStats({
         today_count: res.today_count || 0,
+        late_count: res.late_count || 0,
+        early_count: res.early_count || 0,
+        unexcused_count: res.unexcused_count || 0,
         total_count: res.total_count || 0,
         total_employees: res.total_employees || 0
       });
@@ -82,7 +94,7 @@ export default function App() {
     } finally {
       if (!isSilent) setIsLoadingLogs(false);
     }
-  }, [search, selectedDate]);
+  }, [search, selectedDate, attendanceFilter]);
 
   useEffect(() => {
     fetchEmployees();
@@ -156,9 +168,9 @@ export default function App() {
     }
   };
 
-  // Xuất file CSV (Admin)
+  // Xuất file CSV (Admin) kết hợp lọc theo ngày và tình trạng chấm công
   const handleExport = () => {
-    window.open(systemApi.getExportUrl(selectedDate), '_blank');
+    window.open(systemApi.getExportUrl(selectedDate, attendanceFilter), '_blank');
   };
 
   // Chuyển sang tab thêm nhân viên khi phát hiện khuôn mặt chưa đăng ký (Admin)
@@ -327,6 +339,11 @@ export default function App() {
                 onExport={handleExport}
                 isAutoReload={isAutoReload}
                 setIsAutoReload={setIsAutoReload}
+                attendanceFilter={attendanceFilter}
+                setAttendanceFilter={setAttendanceFilter}
+                stats={stats}
+                onOpenShiftSetup={() => setShowShiftModal(true)}
+                onOpenPermissionModal={(item) => setPermissionModalItem(item)}
               />
             </div>
           </div>
@@ -375,11 +392,30 @@ export default function App() {
           onExport={handleExport}
           isAutoReload={isAutoReload}
           setIsAutoReload={setIsAutoReload}
+          attendanceFilter={attendanceFilter}
+          setAttendanceFilter={setAttendanceFilter}
+          stats={stats}
+          onOpenShiftSetup={() => setShowShiftModal(true)}
+          onOpenPermissionModal={(item) => setPermissionModalItem(item)}
         />
       )}
 
       {/* Image Modal */}
       <ImageModal item={modalItem} onClose={() => setModalItem(null)} />
+
+      {/* Modal Cấu Hình Ca Làm Việc */}
+      <ShiftSetupModal
+        isOpen={showShiftModal}
+        onClose={() => setShowShiftModal(false)}
+        onSaveSuccess={() => fetchLogs(true)}
+      />
+
+      {/* Modal Đánh Dấu Xin Phép (HR) */}
+      <PermissionModal
+        logItem={permissionModalItem}
+        onClose={() => setPermissionModalItem(null)}
+        onSaveSuccess={() => fetchLogs(true)}
+      />
 
       {/* Modal Đăng Nhập Quản Trị */}
       <AdminLoginModal

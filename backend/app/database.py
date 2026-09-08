@@ -93,6 +93,28 @@ def init_db():
     )
     """)
 
+    # 5. Bảng cấu hình ca làm việc (Shift Settings)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS shift_settings (
+        id INTEGER PRIMARY KEY DEFAULT 1,
+        shift_name TEXT DEFAULT 'Ca Hành Chính Mebieco',
+        start_time TEXT DEFAULT '08:00',
+        end_time TEXT DEFAULT '17:30',
+        grace_period_minutes INTEGER DEFAULT 15,
+        early_leave_buffer_minutes INTEGER DEFAULT 0,
+        is_active INTEGER DEFAULT 1,
+        updated_at TEXT
+    )
+    """)
+
+    # Khởi tạo bản ghi ca mặc định nếu chưa có
+    cursor.execute("SELECT COUNT(*) as count FROM shift_settings WHERE id = 1")
+    if cursor.fetchone()["count"] == 0:
+        cursor.execute("""
+            INSERT INTO shift_settings (id, shift_name, start_time, end_time, grace_period_minutes, early_leave_buffer_minutes, is_active, updated_at)
+            VALUES (1, 'Ca Hành Chính Mebieco', '08:00', '17:30', 15, 0, 1, datetime('now'))
+        """)
+
     # Tự động migrate nếu bảng cũ thiếu cột
     cursor.execute("PRAGMA table_info(employees)")
     emp_columns = [col[1] for col in cursor.fetchall()]
@@ -129,6 +151,20 @@ def init_db():
         cursor.execute("ALTER TABLE checkin_logs ADD COLUMN working_hours REAL DEFAULT 0.0")
     if "working_duration" not in log_columns:
         cursor.execute("ALTER TABLE checkin_logs ADD COLUMN working_duration TEXT")
+    if "attendance_status" not in log_columns:
+        cursor.execute("ALTER TABLE checkin_logs ADD COLUMN attendance_status TEXT DEFAULT 'Đúng Giờ'")
+    if "late_minutes" not in log_columns:
+        cursor.execute("ALTER TABLE checkin_logs ADD COLUMN late_minutes INTEGER DEFAULT 0")
+    if "early_minutes" not in log_columns:
+        cursor.execute("ALTER TABLE checkin_logs ADD COLUMN early_minutes INTEGER DEFAULT 0")
+    if "has_permission" not in log_columns:
+        cursor.execute("ALTER TABLE checkin_logs ADD COLUMN has_permission INTEGER DEFAULT 0")
+    if "permission_note" not in log_columns:
+        cursor.execute("ALTER TABLE checkin_logs ADD COLUMN permission_note TEXT DEFAULT ''")
+    if "permission_updated_by" not in log_columns:
+        cursor.execute("ALTER TABLE checkin_logs ADD COLUMN permission_updated_by TEXT DEFAULT ''")
+    if "permission_updated_at" not in log_columns:
+        cursor.execute("ALTER TABLE checkin_logs ADD COLUMN permission_updated_at TEXT DEFAULT ''")
 
     conn.commit()
     conn.close()

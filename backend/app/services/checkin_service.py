@@ -201,21 +201,36 @@ def record_checkin(
 
         success_message = f"🔴 Tan Ca thành công: {final_name} ({time_only_str}) - Đã làm: {working_duration}"
 
+    # 4.5. Đánh giá tính đúng giờ / đi trễ / về sớm theo cấu hình ca làm việc
+    from app.services.shift_service import evaluate_attendance
+    att_eval = evaluate_attendance(check_type, now)
+    attendance_status = att_eval["attendance_status"]
+    late_minutes = att_eval["late_minutes"]
+    early_minutes = att_eval["early_minutes"]
+    status_detail = att_eval["status_detail"]
+
+    if attendance_status == "Đi Trễ":
+        success_message = f"🟠 Vào Ca: {final_name} ({time_only_str}) - Đi trễ {late_minutes} phút"
+    elif attendance_status == "Về Sớm":
+        success_message = f"🟠 Tan Ca: {final_name} ({time_only_str}) - Về sớm {early_minutes} phút (Đã làm: {working_duration})"
+
     cursor.execute("""
         INSERT INTO checkin_logs (
             timestamp, formatted_time, public_ip, local_ip, photo_path, 
             employee_id, employee_code, user_name, match_confidence, 
             status, device_info, user_agent,
             user_lat, user_lng, gps_distance, gps_radius, gps_matched, gps_status,
-            check_type, working_hours, working_duration
+            check_type, working_hours, working_duration,
+            attendance_status, late_minutes, early_minutes, has_permission, permission_note
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, '')
     """, (
         timestamp, formatted_time, public_ip, local_ip, photo_url,
         employee_id, employee_code, final_name, match_confidence or 0.0,
         status, device_info, user_agent,
         user_lat, user_lng, gps_distance, gps_radius, gps_matched, gps_status,
-        check_type, working_hours, working_duration
+        check_type, working_hours, working_duration,
+        attendance_status, late_minutes, early_minutes
     ))
 
     log_id = cursor.lastrowid
@@ -247,27 +262,51 @@ def record_checkin(
             "check_type": check_type,
             "working_hours": working_hours,
             "working_duration": working_duration,
-            "first_checkin_time": first_checkin_time
+            "first_checkin_time": first_checkin_time,
+            "attendance_status": attendance_status,
+            "late_minutes": late_minutes,
+            "early_minutes": early_minutes,
+            "status_detail": status_detail,
+            "has_permission": 0,
+            "permission_note": ""
         }
     }
 
 
-def get_checkin_logs(limit: int = 50, search: str = "", date_filter: str = "") -> Dict[str, Any]:
-    """Lấy danh sách nhật ký điểm danh và các số liệu thống kê"""
+def get_checkin_logs(
+    limit: int = 50, 
+    search: str = "", 
+    date_filter: str = "", 
+    attendance_filter: str = ""
+) -> Dict[str, Any]:
+    """Lấy danh sách nhật ký điểm danh kết hợp lọc đa chiều (ngày, trạng thái trễ/sớm, tìm kiếm) và số liệu thống kê"""
     conn = get_db()
     cursor = conn.cursor()
 
     query = "SELECT * FROM checkin_logs WHERE 1=1"
     params = []
 
+    # 1. Kết hợp lọc theo ngày
     if date_filter:
         query += " AND timestamp LIKE ?"
         params.append(f"{date_filter}%")
 
+    # 2. Kết hợp lọc theo từ khóa tìm kiếm (tên, mã NV)
     if search:
         query += " AND (user_name LIKE ? OR employee_code LIKE ?)"
         term = f"%{search}%"
         params.extend([term, term])
+
+    # 3. Kết hợp lọc theo trạng thái ca & phép
+    clean_att = (attendance_filter or "").strip().lower()
+    if clean_att == "late":
+        query += " AND attendance_status = 'Đi Trễ'"
+    elif clean_att == "early":
+        query += " AND attendance_status = 'Về Sớm'"
+    elif clean_att == "unexcused":
+        query += " AND attendance_status IN ('Đi Trễ', 'Về Sớm') AND (has_permission = 0 OR has_permission IS NULL)"
+    elif clean_att == "excused":
+        query += " AND has_permission = 1"
 
     query += " ORDER BY id DESC LIMIT ?"
     params.append(limit)
@@ -278,6 +317,15 @@ def get_checkin_logs(limit: int = 50, search: str = "", date_filter: str = "") -
     today_str = datetime.now().strftime("%Y-%m-%d")
     cursor.execute("SELECT COUNT(*) as count FROM checkin_logs WHERE timestamp LIKE ?", (f"{today_str}%",))
     today_count = cursor.fetchone()["count"]
+
+    cursor.execute("SELECT COUNT(*) as count FROM checkin_logs WHERE timestamp LIKE ? AND attendance_status = 'Đi Trễ'", (f"{today_str}%",))
+    late_count = cursor.fetchone()["count"]
+
+    cursor.execute("SELECT COUNT(*) as count FROM checkin_logs WHERE timestamp LIKE ? AND attendance_status = 'Về Sớm'", (f"{today_str}%",))
+    early_count = cursor.fetchone()["count"]
+
+    cursor.execute("SELECT COUNT(*) as count FROM checkin_logs WHERE timestamp LIKE ? AND attendance_status IN ('Đi Trễ', 'Về Sớm') AND (has_permission = 0 OR has_permission IS NULL)", (f"{today_str}%",))
+    unexcused_count = cursor.fetchone()["count"]
 
     cursor.execute("SELECT COUNT(*) as count FROM checkin_logs")
     total_count = cursor.fetchone()["count"]
@@ -290,9 +338,36 @@ def get_checkin_logs(limit: int = 50, search: str = "", date_filter: str = "") -
     return {
         "logs": [dict(r) for r in rows],
         "today_count": today_count,
+        "late_count": late_count,
+        "early_count": early_count,
+        "unexcused_count": unexcused_count,
         "total_count": total_count,
         "total_employees": total_employees
     }
+
+
+def update_log_permission(
+    log_id: int, 
+    has_permission: bool, 
+    permission_note: str = "", 
+    updated_by: str = "Admin"
+) -> bool:
+    """HR/Admin đánh dấu đã xin phép kèm ghi chú cho một lượt điểm danh"""
+    now_str = datetime.now().strftime("%H:%M:%S - %d/%m/%Y")
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE checkin_logs
+        SET has_permission = ?,
+            permission_note = ?,
+            permission_updated_by = ?,
+            permission_updated_at = ?
+        WHERE id = ?
+    """, (1 if has_permission else 0, (permission_note or "").strip(), updated_by, now_str, log_id))
+    conn.commit()
+    affected = cursor.rowcount
+    conn.close()
+    return affected > 0
 
 
 def delete_checkin_log(log_id: int) -> bool:

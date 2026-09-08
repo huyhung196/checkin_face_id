@@ -10,9 +10,15 @@ import {
   User, 
   Clock, 
   Inbox, 
-  ShieldCheck,
-  Wifi,
-  Calendar
+  ShieldCheck, 
+  Wifi, 
+  Calendar,
+  ClockAlert,
+  LogOut,
+  AlertTriangle,
+  SlidersHorizontal,
+  CheckCircle2,
+  FileText
 } from 'lucide-react';
 
 export default function LogTable({ 
@@ -27,7 +33,12 @@ export default function LogTable({
   setSelectedDate,
   onExport,
   isAutoReload = true,
-  setIsAutoReload
+  setIsAutoReload,
+  attendanceFilter = 'all',
+  setAttendanceFilter,
+  stats = {},
+  onOpenShiftSetup,
+  onOpenPermissionModal
 }) {
   const todayStr = new Date().toISOString().slice(0, 10);
 
@@ -41,6 +52,19 @@ export default function LogTable({
         </h2>
 
         <div className="log-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {onOpenShiftSetup && (
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={onOpenShiftSetup}
+              title="Cài đặt ca làm việc, mốc giờ vào/ra & ân hạn"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            >
+              <Clock size={14} color="var(--brand-orange)" />
+              <span className="hide-on-mobile">Ca Làm Việc</span>
+            </button>
+          )}
+
           {setIsAutoReload && (
             <button
               type="button"
@@ -88,7 +112,7 @@ export default function LogTable({
             type="button" 
             className="btn-secondary"
             onClick={onExport}
-            title="Xuất file Excel CSV"
+            title="Xuất file Excel CSV (theo ngày & trạng thái đang lọc)"
           >
             <Download size={15} />
             <span className="hide-on-mobile">Xuất Excel</span>
@@ -96,8 +120,8 @@ export default function LogTable({
         </div>
       </div>
 
-      {/* Toolbar tìm kiếm & lọc ngày */}
-      <div className="table-toolbar">
+      {/* Toolbar lọc đa chiều: Hàng 1 tìm kiếm & ngày */}
+      <div className="table-toolbar" style={{ marginBottom: 10 }}>
         <div className="search-box">
           <Search size={15} className="search-icon" />
           <input 
@@ -137,30 +161,141 @@ export default function LogTable({
               onClick={() => setSelectedDate && setSelectedDate('')}
               title="Xem tất cả các ngày"
             >
-              Tất cả
+              Tất cả ngày
             </button>
           )}
         </div>
       </div>
+
+      {/* Toolbar lọc đa chiều: Hàng 2 Trạng thái Chấm công & Phép */}
+      {setAttendanceFilter && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          overflowX: 'auto',
+          paddingBottom: 8,
+          marginBottom: 12,
+          borderBottom: '1px solid var(--border-card)'
+        }}>
+          <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, marginRight: 2 }}>
+            <SlidersHorizontal size={12} /> Tình trạng:
+          </span>
+
+          <button
+            type="button"
+            className={`btn-date-chip ${attendanceFilter === 'all' ? 'active' : ''}`}
+            onClick={() => setAttendanceFilter('all')}
+            style={{ flexShrink: 0 }}
+          >
+            Tất cả
+          </button>
+
+          <button
+            type="button"
+            className={`btn-date-chip ${attendanceFilter === 'unexcused' ? 'active' : ''}`}
+            onClick={() => setAttendanceFilter('unexcused')}
+            style={{
+              flexShrink: 0,
+              borderColor: attendanceFilter === 'unexcused' ? '#ef4444' : 'rgba(239, 68, 68, 0.3)',
+              color: attendanceFilter === 'unexcused' ? '#fff' : '#ef4444',
+              background: attendanceFilter === 'unexcused' ? '#ef4444' : 'rgba(239, 68, 68, 0.08)',
+              fontWeight: 700
+            }}
+            title="Các ca đi trễ hoặc về sớm chưa được HR đánh dấu có phép"
+          >
+            ⚠️ Cần xử lý (Chưa phép)
+            {stats.unexcused_count > 0 && (
+              <span style={{
+                marginLeft: 5,
+                background: attendanceFilter === 'unexcused' ? '#fff' : '#ef4444',
+                color: attendanceFilter === 'unexcused' ? '#ef4444' : '#fff',
+                fontSize: '0.68rem',
+                padding: '1px 5px',
+                borderRadius: 10,
+                fontWeight: 800
+              }}>
+                {stats.unexcused_count}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            className={`btn-date-chip ${attendanceFilter === 'late' ? 'active' : ''}`}
+            onClick={() => setAttendanceFilter('late')}
+            style={{
+              flexShrink: 0,
+              borderColor: attendanceFilter === 'late' ? '#f59e0b' : undefined,
+              color: attendanceFilter === 'late' ? '#fff' : '#f59e0b',
+              background: attendanceFilter === 'late' ? '#f59e0b' : 'rgba(245, 158, 11, 0.08)'
+            }}
+          >
+            🟠 Đi Trễ
+          </button>
+
+          <button
+            type="button"
+            className={`btn-date-chip ${attendanceFilter === 'early' ? 'active' : ''}`}
+            onClick={() => setAttendanceFilter('early')}
+            style={{
+              flexShrink: 0,
+              borderColor: attendanceFilter === 'early' ? '#ef4444' : undefined,
+              color: attendanceFilter === 'early' ? '#fff' : '#ef4444',
+              background: attendanceFilter === 'early' ? '#ef4444' : 'rgba(239, 68, 68, 0.08)'
+            }}
+          >
+            🔴 Về Sớm
+          </button>
+
+          <button
+            type="button"
+            className={`btn-date-chip ${attendanceFilter === 'excused' ? 'active' : ''}`}
+            onClick={() => setAttendanceFilter('excused')}
+            style={{
+              flexShrink: 0,
+              borderColor: attendanceFilter === 'excused' ? '#10b981' : undefined,
+              color: attendanceFilter === 'excused' ? '#fff' : '#10b981',
+              background: attendanceFilter === 'excused' ? '#10b981' : 'rgba(16, 185, 129, 0.08)'
+            }}
+          >
+            🟢 Đã Có Phép
+          </button>
+        </div>
+      )}
 
       {/* Content */}
       {logs.length === 0 ? (
         <div className="empty-state">
           <Inbox size={44} style={{ opacity: 0.4 }} />
           <p style={{ fontWeight: 600 }}>
-            {selectedDate 
-              ? `Không có lượt điểm danh nào trong ngày ${selectedDate}` 
-              : 'Chưa có lượt điểm danh nào'}
+            {selectedDate || attendanceFilter !== 'all'
+              ? `Không tìm thấy lượt điểm danh nào phù hợp với bộ lọc đang chọn.` 
+              : 'Chưa có lượt điểm danh nào.'}
           </p>
-          {selectedDate && (
-            <button 
-              type="button" 
-              className="btn-secondary" 
-              style={{ marginTop: 8, fontSize: '0.8rem' }}
-              onClick={() => setSelectedDate && setSelectedDate('')}
-            >
-              Xóa bộ lọc ngày
-            </button>
+          {(selectedDate || attendanceFilter !== 'all' || search) && (
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              {selectedDate && (
+                <button 
+                  type="button" 
+                  className="btn-secondary" 
+                  style={{ fontSize: '0.8rem' }}
+                  onClick={() => setSelectedDate && setSelectedDate('')}
+                >
+                  Xóa lọc ngày
+                </button>
+              )}
+              {attendanceFilter !== 'all' && (
+                <button 
+                  type="button" 
+                  className="btn-secondary" 
+                  style={{ fontSize: '0.8rem' }}
+                  onClick={() => setAttendanceFilter && setAttendanceFilter('all')}
+                >
+                  Xóa lọc tình trạng
+                </button>
+              )}
+            </div>
           )}
         </div>
       ) : (
@@ -174,6 +309,8 @@ export default function LogTable({
                   <th>Mã NV</th>
                   <th>Họ & Tên</th>
                   <th>Loại Ca</th>
+                  <th>Tình Trạng Ca</th>
+                  <th>Xin Phép (HR)</th>
                   <th>Độ Khớp AI</th>
                   <th>Khớp GPS</th>
                   <th>Thời Gian</th>
@@ -182,177 +319,284 @@ export default function LogTable({
                 </tr>
               </thead>
               <tbody>
-                {logs.map((row) => (
-                  <tr key={row.id}>
-                    <td>
-                      {row.photo_path ? (
-                        <img 
-                          src={row.photo_path} 
-                          alt="Snapshot" 
-                          className="table-photo-thumb"
-                          onClick={() => onImageClick(row)}
-                          title="Bấm xem ảnh to"
-                        />
-                      ) : (
-                        <div className="table-photo-thumb placeholder">
-                          <User size={18} color="#64748b" />
-                        </div>
-                      )}
-                    </td>
-                    <td>
-                      <strong style={{ color: 'var(--brand-blue)', fontFamily: 'var(--font-mono)' }}>
-                        {row.employee_code || '---'}
-                      </strong>
-                    </td>
-                    <td>
-                      <strong style={{ color: 'var(--text-main)' }}>{row.user_name}</strong>
-                    </td>
-                    <td>
-                      {row.check_type === 'Tan Ca' ? (
-                        <div>
-                          <span className="confidence-tag" style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#ef4444', fontWeight: 700 }}>
-                            🔴 Tan Ca
+                {logs.map((row) => {
+                  const attStatus = row.attendance_status || 'Đúng Giờ';
+                  const isLate = attStatus === 'Đi Trễ';
+                  const isEarly = attStatus === 'Về Sớm';
+                  const hasPerm = Boolean(row.has_permission);
+
+                  return (
+                    <tr key={row.id}>
+                      <td>
+                        {row.photo_path ? (
+                          <img 
+                            src={row.photo_path} 
+                            alt="Snapshot" 
+                            className="table-photo-thumb"
+                            onClick={() => onImageClick(row)}
+                            title="Bấm xem ảnh to"
+                          />
+                        ) : (
+                          <div className="table-photo-thumb placeholder">
+                            <User size={18} color="#64748b" />
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        <strong style={{ color: 'var(--brand-blue)', fontFamily: 'var(--font-mono)' }}>
+                          {row.employee_code || '---'}
+                        </strong>
+                      </td>
+                      <td>
+                        <strong style={{ color: 'var(--text-main)' }}>{row.user_name}</strong>
+                      </td>
+                      <td>
+                        {row.check_type === 'Tan Ca' ? (
+                          <div>
+                            <span className="confidence-tag" style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#ef4444', fontWeight: 700 }}>
+                              🔴 Tan Ca
+                            </span>
+                            {row.working_duration && row.working_duration !== '---' && (
+                              <div style={{ fontSize: '0.72rem', color: '#d97706', marginTop: 3, fontWeight: 600 }}>
+                                ⏱️ {row.working_duration}
+                              </div>
+                            )}
+                          </div>
+                        ) : row.check_type === 'Vào Ca' ? (
+                          <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', fontWeight: 700 }}>
+                            🟢 Vào Ca
                           </span>
-                          {row.working_duration && row.working_duration !== '---' && (
-                            <div style={{ fontSize: '0.72rem', color: '#d97706', marginTop: 3, fontWeight: 600 }}>
-                              ⏱️ {row.working_duration}
-                            </div>
-                          )}
+                        ) : (
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>---</span>
+                        )}
+                      </td>
+
+                      {/* Cột Tình Trạng Ca (Đúng Giờ / Đi Trễ / Về Sớm) */}
+                      <td>
+                        {isLate ? (
+                          <span 
+                            className="confidence-tag"
+                            style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#d97706', fontWeight: 700 }}
+                            title={`Đi trễ ${row.late_minutes} phút so với giờ quy định`}
+                          >
+                            🟠 Trễ {row.late_minutes}p
+                          </span>
+                        ) : isEarly ? (
+                          <span 
+                            className="confidence-tag"
+                            style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', fontWeight: 700 }}
+                            title={`Về sớm ${row.early_minutes} phút so với giờ tan ca`}
+                          >
+                            🔴 Sớm {row.early_minutes}p
+                          </span>
+                        ) : (
+                          <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', fontWeight: 600 }}>
+                            ✓ Đúng Giờ
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Cột Xin Phép (HR) */}
+                      <td>
+                        {isLate || isEarly ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            <button
+                              type="button"
+                              onClick={() => onOpenPermissionModal && onOpenPermissionModal(row)}
+                              title={hasPerm ? `Đã duyệt phép: ${row.permission_note || 'Có phép'} (Bấm để chỉnh sửa)` : 'Bấm để đánh dấu đã có xin phép'}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                padding: '3px 8px',
+                                borderRadius: 6,
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                border: hasPerm ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(239, 68, 68, 0.35)',
+                                background: hasPerm ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.08)',
+                                color: hasPerm ? '#10b981' : '#ef4444',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                width: 'fit-content'
+                              }}
+                            >
+                              {hasPerm ? (
+                                <>
+                                  <CheckCircle2 size={12} />
+                                  <span>Đã có phép</span>
+                                </>
+                              ) : (
+                                <>
+                                  <AlertTriangle size={12} />
+                                  <span>Chưa phép (Duyệt)</span>
+                                </>
+                              )}
+                            </button>
+                            {hasPerm && row.permission_note && (
+                              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontStyle: 'italic', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={row.permission_note}>
+                                💬 {row.permission_note}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.76rem' }}>---</span>
+                        )}
+                      </td>
+
+                      <td>
+                        {row.match_confidence >= 50.0 ? (
+                          <span className="confidence-tag">
+                            ✓ {row.match_confidence}%
+                          </span>
+                        ) : (
+                          <span className="confidence-tag unmatched">
+                            Người Lạ
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        {row.gps_matched === 1 ? (
+                          <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
+                            ✓ Đạt ({row.gps_distance}m)
+                          </span>
+                        ) : row.gps_matched === 0 ? (
+                          <span className="confidence-tag unmatched" style={{ background: 'rgba(225, 29, 72, 0.15)', color: '#e11d48' }} title={`Khoảng cách ${row.gps_distance}m (Bán kính ${row.gps_radius}m)`}>
+                            ❌ Vi Phạm ({row.gps_distance}m)
+                          </span>
+                        ) : (
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>---</span>
+                        )}
+                      </td>
+                      <td>
+                        <div className="log-time-cell">
+                          <Clock size={13} color="#FD6900" />
+                          <span>{row.formatted_time}</span>
                         </div>
-                      ) : row.check_type === 'Vào Ca' ? (
-                        <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', fontWeight: 700 }}>
-                          🟢 Vào Ca
-                        </span>
-                      ) : (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>---</span>
-                      )}
-                    </td>
-                    <td>
-                      {row.match_confidence >= 50.0 ? (
-                        <span className="confidence-tag">
-                          ✓ {row.match_confidence}%
-                        </span>
-                      ) : (
-                        <span className="confidence-tag unmatched">
-                          Người Lạ
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      {row.gps_matched === 1 ? (
-                        <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
-                          ✓ Đạt ({row.gps_distance}m)
-                        </span>
-                      ) : row.gps_matched === 0 ? (
-                        <span className="confidence-tag unmatched" style={{ background: 'rgba(225, 29, 72, 0.15)', color: '#e11d48' }} title={`Khoảng cách ${row.gps_distance}m (Bán kính ${row.gps_radius}m)`}>
-                          ❌ Vi Phạm ({row.gps_distance}m)
-                        </span>
-                      ) : (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>---</span>
-                      )}
-                    </td>
-                    <td>
-                      <div className="log-time-cell">
-                        <Clock size={13} color="#FD6900" />
-                        <span>{row.formatted_time}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="log-device-cell">
-                        <Smartphone size={13} />
-                        <span>{row.device_info || 'Không rõ'}</span>
-                      </div>
-                    </td>
-                    <td style={{ textAlign: 'center' }}>
-                      <button 
-                        type="button" 
-                        className="btn-del"
-                        onClick={() => onDelete(row.id)}
-                        title={`Xóa log #${row.id}`}
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td>
+                        <div className="log-device-cell">
+                          <Smartphone size={13} />
+                          <span>{row.device_info || 'Không rõ'}</span>
+                        </div>
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <button 
+                          type="button" 
+                          className="btn-del"
+                          onClick={() => onDelete(row.id)}
+                          title={`Xóa log #${row.id}`}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           {/* Mobile Card List View */}
           <div className="mobile-only log-cards-container">
-            {logs.map((row) => (
-              <div key={row.id} className="log-mobile-card">
-                <div className="log-mobile-card-top">
-                  {row.photo_path ? (
-                    <img 
-                      src={row.photo_path} 
-                      alt="Snapshot" 
-                      className="log-mobile-thumb"
-                      onClick={() => onImageClick(row)}
-                      title="Bấm xem ảnh to"
-                    />
-                  ) : (
-                    <div className="log-mobile-thumb placeholder">
-                      <User size={20} color="#94a3b8" />
-                    </div>
-                  )}
+            {logs.map((row) => {
+              const attStatus = row.attendance_status || 'Đúng Giờ';
+              const isLate = attStatus === 'Đi Trễ';
+              const isEarly = attStatus === 'Về Sớm';
+              const hasPerm = Boolean(row.has_permission);
 
-                  <div className="log-mobile-info">
-                    <div className="log-mobile-user-row">
-                      <span className="log-mobile-user-name">{row.user_name}</span>
-                      {row.employee_code && (
-                        <span className="log-mobile-emp-code">({row.employee_code})</span>
-                      )}
+              return (
+                <div key={row.id} className="log-mobile-card">
+                  <div className="log-mobile-card-top">
+                    {row.photo_path ? (
+                      <img 
+                        src={row.photo_path} 
+                        alt="Snapshot" 
+                        className="log-mobile-thumb"
+                        onClick={() => onImageClick(row)}
+                        title="Bấm xem ảnh to"
+                      />
+                    ) : (
+                      <div className="log-mobile-thumb placeholder">
+                        <User size={20} color="#94a3b8" />
+                      </div>
+                    )}
+
+                    <div className="log-mobile-info">
+                      <div className="log-mobile-user-row">
+                        <span className="log-mobile-user-name">{row.user_name}</span>
+                        {row.employee_code && (
+                          <span className="log-mobile-emp-code">({row.employee_code})</span>
+                        )}
+                      </div>
+
+                      <div className="log-mobile-meta-row" style={{ flexWrap: 'wrap', gap: 4 }}>
+                        {row.check_type === 'Tan Ca' ? (
+                          <span className="confidence-tag" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', fontWeight: 700 }}>
+                            🔴 Tan Ca {row.working_duration && row.working_duration !== '---' ? `(${row.working_duration})` : ''}
+                          </span>
+                        ) : row.check_type === 'Vào Ca' ? (
+                          <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontWeight: 700 }}>
+                            🟢 Vào Ca
+                          </span>
+                        ) : null}
+
+                        {isLate ? (
+                          <span className="confidence-tag" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#d97706', fontWeight: 700 }}>
+                            🟠 Trễ {row.late_minutes}p
+                          </span>
+                        ) : isEarly ? (
+                          <span className="confidence-tag" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', fontWeight: 700 }}>
+                            🔴 Sớm {row.early_minutes}p
+                          </span>
+                        ) : null}
+
+                        {(isLate || isEarly) && (
+                          <button
+                            type="button"
+                            onClick={() => onOpenPermissionModal && onOpenPermissionModal(row)}
+                            style={{
+                              border: hasPerm ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(239, 68, 68, 0.4)',
+                              background: hasPerm ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.1)',
+                              color: hasPerm ? '#10b981' : '#ef4444',
+                              fontSize: '0.7rem',
+                              padding: '2px 6px',
+                              borderRadius: 4,
+                              fontWeight: 700,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {hasPerm ? '✓ Có phép' : '⚠️ Chưa phép'}
+                          </button>
+                        )}
+
+                        <span className="log-mobile-time">
+                          <Clock size={11} color="#FD6900" />
+                          {row.formatted_time}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="log-mobile-meta-row">
-                      {row.check_type === 'Tan Ca' ? (
-                        <span className="confidence-tag" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', fontWeight: 700 }}>
-                          🔴 Tan Ca {row.working_duration && row.working_duration !== '---' ? `(${row.working_duration})` : ''}
-                        </span>
-                      ) : row.check_type === 'Vào Ca' ? (
-                        <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontWeight: 700 }}>
-                          🟢 Vào Ca
-                        </span>
-                      ) : null}
-                      {row.match_confidence >= 50.0 ? (
-                        <span className="confidence-tag">✓ {row.match_confidence}% Khớp</span>
-                      ) : (
-                        <span className="confidence-tag unmatched">Người Lạ</span>
-                      )}
-                      {row.gps_matched === 1 ? (
-                        <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>✓ GPS Đạt</span>
-                      ) : row.gps_matched === 0 ? (
-                        <span className="confidence-tag unmatched" style={{ background: 'rgba(225, 29, 72, 0.15)', color: '#e11d48' }}>❌ GPS Vi Phạm</span>
-                      ) : null}
-                      <span className="log-mobile-time">
-                        <Clock size={11} color="#FD6900" />
-                        {row.formatted_time}
+                    <button 
+                      type="button" 
+                      className="btn-del"
+                      onClick={() => onDelete(row.id)}
+                      title={`Xóa log #${row.id}`}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+
+                  {row.device_info && (
+                    <div className="log-mobile-card-bottom">
+                      <span className="log-mobile-device">
+                        <Smartphone size={11} />
+                        {row.device_info}
                       </span>
                     </div>
-                  </div>
-
-                  <button 
-                    type="button" 
-                    className="btn-del"
-                    onClick={() => onDelete(row.id)}
-                    title={`Xóa log #${row.id}`}
-                  >
-                    <Trash2 size={15} />
-                  </button>
+                  )}
                 </div>
-
-                {row.device_info && (
-                  <div className="log-mobile-card-bottom">
-                    <span className="log-mobile-device">
-                      <Smartphone size={11} />
-                      {row.device_info}
-                    </span>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}
