@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Dict, Any, Optional
+from app.config import get_vietnam_now
 from app.database import get_db
 
 def get_shift_settings() -> Dict[str, Any]:
@@ -10,7 +11,7 @@ def get_shift_settings() -> Dict[str, Any]:
     row = cursor.fetchone()
     
     if not row:
-        now_str = datetime.now().isoformat()
+        now_str = get_vietnam_now().isoformat()
         cursor.execute("""
             INSERT INTO shift_settings (id, shift_name, start_time, end_time, grace_period_minutes, early_leave_buffer_minutes, is_active, updated_at)
             VALUES (1, 'Ca Hành Chính Mebieco', '08:00', '17:30', 15, 0, 1, ?)
@@ -31,7 +32,7 @@ def save_shift_settings(
     early_leave_buffer_minutes: int = 0
 ) -> Dict[str, Any]:
     """Cập nhật cấu hình ca làm việc"""
-    now_str = datetime.now().isoformat()
+    now_str = get_vietnam_now().isoformat()
     clean_start = (start_time or "08:00").strip()
     clean_end = (end_time or "17:30").strip()
     clean_name = (shift_name or "Ca Hành Chính").strip()

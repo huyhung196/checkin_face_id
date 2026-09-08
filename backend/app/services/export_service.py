@@ -2,6 +2,7 @@ import csv
 import io
 from datetime import datetime
 from typing import List, Dict, Any
+from app.config import get_vietnam_now
 from app.services.checkin_service import get_checkin_logs
 
 def generate_attendance_csv(date_filter: str = "", attendance_filter: str = "") -> tuple[io.BytesIO, str]:
@@ -67,7 +68,7 @@ def generate_attendance_csv(date_filter: str = "", attendance_filter: str = "") 
     output.seek(0)
     tag = f"_{attendance_filter}" if attendance_filter else ""
     date_tag = f"_{date_filter}" if date_filter else ""
-    filename = f"face_id_attendance_logs{date_tag}{tag}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    filename = f"face_id_attendance_logs{date_tag}{tag}_{get_vietnam_now().strftime('%Y%m%d_%H%M%S')}.csv"
     byte_stream = io.BytesIO(output.getvalue().encode('utf-8-sig'))
 
     return byte_stream, filename

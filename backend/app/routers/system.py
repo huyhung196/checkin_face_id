@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request
-from datetime import datetime
+from app.config import get_vietnam_now
 from app.services.checkin_service import parse_device_info
 
 router = APIRouter(prefix="/api", tags=["System"])
@@ -10,7 +10,7 @@ def get_my_ip(request: Request):
     ua = request.headers.get("user-agent", "")
     return {
         "device_info": parse_device_info(ua),
-        "server_time": datetime.now().strftime("%H:%M:%S - %d/%m/%Y")
+        "server_time": get_vietnam_now().strftime("%H:%M:%S - %d/%m/%Y")
     }
 
 
@@ -19,5 +19,5 @@ def health_check():
     return {
         "status": "healthy",
         "service": "Face ID AI Check-in System",
-        "time": datetime.now().isoformat()
+        "time": get_vietnam_now().isoformat()
     }

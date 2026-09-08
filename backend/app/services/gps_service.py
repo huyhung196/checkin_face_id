@@ -1,6 +1,7 @@
 import math
 from datetime import datetime
 from typing import Dict, Any, List, Optional
+from app.config import get_vietnam_now
 from app.database import get_db
 from app.services.checkin_service import parse_device_info
 
@@ -35,7 +36,7 @@ def get_gps_settings() -> Optional[Dict[str, Any]]:
 
 def save_gps_settings(location_name: str, latitude: float, longitude: float, radius_meters: float) -> Dict[str, Any]:
     """Cập nhật hoặc khởi tạo cấu hình vị trí mục tiêu GPS"""
-    now_str = datetime.now().isoformat()
+    now_str = get_vietnam_now().isoformat()
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
@@ -109,7 +110,7 @@ def record_gps_checkin(
     status_text = f"Đạt (Trong bán kính {dist_m}m)" if is_valid else f"Không đạt - Vượt bán kính ({dist_m}m / Cho phép {radius_meters}m)"
     device_info = parse_device_info(user_agent)
 
-    now = datetime.now()
+    now = get_vietnam_now()
     timestamp = now.isoformat()
     formatted_time = now.strftime("%H:%M:%S - %d/%m/%Y")
     final_user_name = user_name.strip() if user_name else "Người dùng GPS"

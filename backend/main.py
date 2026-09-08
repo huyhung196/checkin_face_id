@@ -10,7 +10,8 @@ from app.config import (
     FRONTEND_DIST,
     MODELS_DIR,
     ICONS_DIR,
-    LOGO_FILE
+    LOGO_FILE,
+    get_vietnam_now
 )
 from app.database import init_db
 from app.routers.employees import router as employees_router
@@ -104,7 +105,7 @@ def serve_spa():
         "status": "online",
         "service": "Face ID AI Check-in & IP Logger API (Production Modular)",
         "version": "3.0.0",
-        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "time": get_vietnam_now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
 

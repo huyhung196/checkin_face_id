@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 
-from app.config import UPLOAD_DIR
+from app.config import UPLOAD_DIR, get_vietnam_now
 from app.database import get_db
 from app.services.employee_service import save_base64_image, get_all_employees, get_employee_by_id
 from app.services.face_service import match_live_face_against_database
@@ -155,7 +155,7 @@ def record_checkin(
         }
 
     # 4. Xác định loại điểm danh (Vào Ca / Tan Ca) theo quy tắc Lần đầu là Vào – Lần cuối là Ra
-    now = datetime.now()
+    now = get_vietnam_now()
     timestamp = now.isoformat()
     formatted_time = now.strftime("%H:%M:%S - %d/%m/%Y")
     time_only_str = now.strftime("%H:%M:%S")
@@ -318,7 +318,7 @@ def get_checkin_logs(
     cursor.execute(query, params)
     rows = cursor.fetchall()
 
-    today_str = datetime.now().strftime("%Y-%m-%d")
+    today_str = get_vietnam_now().strftime("%Y-%m-%d")
     cursor.execute("SELECT COUNT(*) as count FROM checkin_logs WHERE timestamp LIKE ?", (f"{today_str}%",))
     today_count = cursor.fetchone()["count"]
 
@@ -373,7 +373,7 @@ def update_log_permission(
     updated_by: str = "Admin"
 ) -> bool:
     """HR/Admin đánh dấu đã xin phép kèm ghi chú cho một lượt điểm danh"""
-    now_str = datetime.now().strftime("%H:%M:%S - %d/%m/%Y")
+    now_str = get_vietnam_now().strftime("%H:%M:%S - %d/%m/%Y")
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""

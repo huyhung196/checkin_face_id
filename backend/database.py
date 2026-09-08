@@ -3,6 +3,7 @@ import os
 import json
 from datetime import datetime
 from typing import List, Optional, Dict, Any
+from app.config import get_vietnam_now
 
 DB_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(DB_DIR, "checkin.db")
@@ -119,7 +120,7 @@ def insert_employee(
     avatar_path: str = "",
     face_descriptor: Optional[List[float]] = None
 ) -> Dict[str, Any]:
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now_str = get_vietnam_now().strftime("%Y-%m-%d %H:%M:%S")
     desc_json = json.dumps(face_descriptor) if face_descriptor else None
     
     conn = get_db()
@@ -186,7 +187,7 @@ def insert_log(
     device_info: str = "Không rõ",
     user_agent: str = ""
 ):
-    now = datetime.now()
+    now = get_vietnam_now()
     timestamp = now.isoformat()
     formatted_time = now.strftime("%H:%M:%S - %d/%m/%Y")
     
@@ -204,37 +205,30 @@ def insert_log(
         employee_id, employee_code, user_name, match_confidence,
         status, device_info, user_agent
     ))
-    
-    log_id = cursor.lastrowid
     conn.commit()
+    log_id = cursor.lastrowid
     conn.close()
     
     return {
         "id": log_id,
         "timestamp": timestamp,
         "formatted_time": formatted_time,
-        "public_ip": public_ip,
-        "local_ip": local_ip,
-        "photo_path": photo_path,
-        "employee_id": employee_id,
-        "employee_code": employee_code,
         "user_name": user_name,
+        "employee_code": employee_code,
+        "photo_path": photo_path,
         "match_confidence": match_confidence,
-        "status": status,
-        "device_info": device_info
+        "device_info": device_info,
+        "status": status
     }
 
-def get_logs(limit: int = 50, search: str = "", date_filter: str = ""):
+def get_checkin_logs(limit: int = 50, search: str = "") -> Dict[str, Any]:
+    """Lấy danh sách điểm danh, thống kê tổng và hôm nay"""
     conn = get_db()
     cursor = conn.cursor()
     
     query = "SELECT * FROM checkin_logs WHERE 1=1"
     params = []
     
-    if date_filter:
-        query += " AND timestamp LIKE ?"
-        params.append(f"{date_filter}%")
-        
     if search:
         query += " AND (user_name LIKE ? OR employee_code LIKE ? OR public_ip LIKE ? OR local_ip LIKE ?)"
         term = f"%{search}%"
@@ -246,7 +240,7 @@ def get_logs(limit: int = 50, search: str = "", date_filter: str = ""):
     cursor.execute(query, params)
     rows = cursor.fetchall()
     
-    today_str = datetime.now().strftime("%Y-%m-%d")
+    today_str = get_vietnam_now().strftime("%Y-%m-%d")
     cursor.execute("SELECT COUNT(*) as count FROM checkin_logs WHERE timestamp LIKE ?", (f"{today_str}%",))
     today_count = cursor.fetchone()["count"]
     

@@ -121,8 +121,8 @@ export default function LogTable({
       </div>
 
       {/* Toolbar lọc đa chiều: Tìm kiếm + Chọn Ngày + Combobox Tình Trạng */}
-      <div className="table-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
-        <div className="search-box" style={{ flex: '1 1 180px', minWidth: 150 }}>
+      <div className="table-toolbar">
+        <div className="search-box">
           <Search size={15} className="search-icon" />
           <input 
             type="text" 
@@ -133,7 +133,7 @@ export default function LogTable({
           />
         </div>
 
-        <div className="date-filter-group" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        <div className="date-filter-group">
           <div className="date-filter-box">
             <Calendar size={14} className="date-icon" />
             <input 
@@ -168,19 +168,13 @@ export default function LogTable({
 
         {/* Combobox Tình trạng chấm công */}
         {setAttendanceFilter && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div className="status-filter-group">
             <select
-              className="search-input"
+              className="status-select"
               style={{
-                padding: '7px 12px',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                borderRadius: 8,
                 background: attendanceFilter !== 'all' ? 'rgba(253, 105, 0, 0.08)' : '#fff',
                 borderColor: attendanceFilter !== 'all' ? 'var(--brand-orange)' : 'var(--border-card)',
-                color: attendanceFilter !== 'all' ? 'var(--brand-orange)' : 'var(--text-main)',
-                cursor: 'pointer',
-                minWidth: 175
+                color: attendanceFilter !== 'all' ? 'var(--brand-orange)' : 'var(--text-main)'
               }}
               value={attendanceFilter}
               onChange={(e) => setAttendanceFilter(e.target.value)}
@@ -200,7 +194,7 @@ export default function LogTable({
                 className="btn-date-chip clear"
                 onClick={() => setAttendanceFilter('all')}
                 title="Bỏ lọc tình trạng"
-                style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                style={{ padding: '7px 10px', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
               >
                 Đặt lại
               </button>

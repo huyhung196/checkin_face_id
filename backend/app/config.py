@@ -1,7 +1,18 @@
 import os
+from datetime import datetime, timezone, timedelta
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
+
+# Múi giờ Việt Nam (UTC+7) cho toàn bộ hệ thống
+VIETNAM_TZ = timezone(timedelta(hours=7))
+
+def get_vietnam_now() -> datetime:
+    """
+    Trả về datetime hiện tại chính xác theo múi giờ Việt Nam (UTC+7).
+    Bỏ thông tin tzinfo (naive datetime) để tương thích 100% với SQLite, ISO strings và tính toán timedelta.
+    """
+    return datetime.now(VIETNAM_TZ).replace(tzinfo=None)
 
 # Directories
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")

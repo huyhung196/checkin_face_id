@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
-from app.config import UPLOAD_DIR, MAX_DESCRIPTORS_PER_EMPLOYEE, DUPLICATE_FACE_THRESHOLD
+from app.config import UPLOAD_DIR, MAX_DESCRIPTORS_PER_EMPLOYEE, DUPLICATE_FACE_THRESHOLD, get_vietnam_now
 from app.database import get_db
 from app.services.face_service import check_for_duplicate_face
 
@@ -25,7 +25,7 @@ def save_base64_image(image_str: str, prefix: str = "avatar") -> str:
         
     try:
         image_bytes = base64.b64decode(image_str)
-        now = datetime.now()
+        now = get_vietnam_now()
         file_name = f"{prefix}_{now.strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}.{ext}"
         file_path = os.path.join(UPLOAD_DIR, file_name)
         
@@ -188,7 +188,7 @@ def create_employee(
         avatar_url = save_base64_image(avatar_image, prefix="avatar")
 
     # 3. Lưu vào Database
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now_str = get_vietnam_now().strftime("%Y-%m-%d %H:%M:%S")
     desc_json = json.dumps(normalized_descriptors) if normalized_descriptors else None
 
     conn = get_db()

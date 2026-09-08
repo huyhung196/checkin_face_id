@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Query, HTTPException
 from datetime import datetime
+from app.config import get_vietnam_now
 from app.models import PermissionUpdateRequest
 from app.services.checkin_service import get_checkin_logs, delete_checkin_log, update_log_permission
 
@@ -32,7 +33,7 @@ def fetch_logs(
         "unexcused_count": result.get("unexcused_count", 0),
         "total_count": result["total_count"],
         "total_employees": result["total_employees"],
-        "server_time": datetime.now().strftime("%H:%M:%S - %d/%m/%Y")
+        "server_time": get_vietnam_now().strftime("%H:%M:%S - %d/%m/%Y")
     }
 
 

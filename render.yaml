@@ -11,3 +11,5 @@ services:
         value: 3.10.12
       - key: NODE_VERSION
         value: 20.12.2
+      - key: TZ
+        value: Asia/Ho_Chi_Minh
