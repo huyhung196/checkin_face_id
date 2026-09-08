@@ -74,6 +74,13 @@ def create_new_employee(data: EmployeeCreateRequest):
     if not data.full_name or not data.full_name.strip():
         raise HTTPException(status_code=400, detail="Họ và tên nhân viên là bắt buộc")
 
+    desc_count = len(data.face_descriptors) if (data.face_descriptors and isinstance(data.face_descriptors, list)) else (1 if data.face_descriptor else 0)
+    if desc_count < 25:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Bắt buộc phải có đủ 25 mẫu ảnh khuôn mặt (5 góc x 5 mẫu) để đăng ký nhân viên mới. Hiện tại mới có: {desc_count}/25 mẫu."
+        )
+
     emp_code = data.employee_code.strip() if (data.employee_code and data.employee_code.strip()) else generate_next_employee_code()
 
     res = create_employee(
@@ -90,13 +97,16 @@ def create_new_employee(data: EmployeeCreateRequest):
     )
 
     if res.get("is_duplicate"):
-        # Trả về mã 409 Conflict kèm thông tin nhân viên bị trùng để frontend mở modal xác nhận
+        # Trả về kèm thông tin nhân viên bị trùng để frontend mở modal xác nhận
         return {
             "success": False,
             "is_duplicate": True,
             "duplicate_info": res["duplicate_info"],
             "message": res["message"]
         }
+
+    if not res.get("success"):
+        raise HTTPException(status_code=400, detail=res.get("message", "Lỗi tạo nhân viên"))
 
     return res
 

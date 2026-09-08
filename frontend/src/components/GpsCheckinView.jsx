@@ -58,21 +58,25 @@ export default function GpsCheckinView({ employees = [] }) {
   }, []);
 
   // Tải lịch sử điểm danh GPS
-  const fetchLogs = useCallback(async () => {
-    setIsLoadingLogs(true);
+  const fetchLogs = useCallback(async (isSilent = false) => {
+    if (!isSilent) setIsLoadingLogs(true);
     try {
       const res = await gpsApi.getLogs({ limit: 50 });
       setLogs(res.logs || []);
     } catch (err) {
       console.error("Lỗi khi tải nhật ký GPS:", err);
     } finally {
-      setIsLoadingLogs(false);
+      if (!isSilent) setIsLoadingLogs(false);
     }
   }, []);
 
   useEffect(() => {
     fetchSettings();
     fetchLogs();
+    const interval = setInterval(() => {
+      fetchLogs(true);
+    }, 5000);
+    return () => clearInterval(interval);
   }, [fetchSettings, fetchLogs]);
 
   // Khởi tạo bản đồ hiển thị khi đã cài đặt xong GPS

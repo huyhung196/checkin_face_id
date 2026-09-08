@@ -142,9 +142,9 @@ export default function MiniGpsCard({ onOpenGpsSetup }) {
       </div>
 
       {!isConfigured ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 10, background: 'rgba(253, 105, 0, 0.08)', border: '1px solid var(--border-card)', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-          <AlertCircle size={16} color="#FD6900" style={{ flexShrink: 0 }} />
-          <span>Chưa cài GPS mục tiêu. Tất cả lượt điểm danh sẽ ghi nhận vị trí để tham chiếu.</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 10, background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)', fontSize: '0.82rem', color: '#ef4444' }}>
+          <AlertCircle size={16} color="#ef4444" style={{ flexShrink: 0 }} />
+          <span><b>Chưa cấu hình GPS mục tiêu:</b> Hệ thống đang khóa điểm danh. Vui lòng bấm <b>"Cài Đặt"</b> để thiết lập vị trí & bán kính công ty.</span>
         </div>
       ) : (
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between' }}>

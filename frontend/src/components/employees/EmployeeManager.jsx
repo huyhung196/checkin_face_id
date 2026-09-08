@@ -76,6 +76,11 @@ export default function EmployeeManager({
       return;
     }
 
+    if (!faceDescriptors || faceDescriptors.length < 25) {
+      alert(`❌ Bắt buộc phải có đủ 25 mẫu ảnh khuôn mặt (5 góc x 5 mẫu) mới được tạo nhân viên! Hiện tại mới có ${faceDescriptors ? faceDescriptors.length : 0}/25 mẫu. Vui lòng bấm "Quét Khuôn Mặt" để hoàn tất đủ 25 ảnh.`);
+      return;
+    }
+
     const finalCode = formData.employee_code || autoCode;
 
     setIsSubmitting(true);
@@ -281,7 +286,7 @@ export default function EmployeeManager({
               </div>
 
               {/* Status Badge */}
-              {faceDescriptors.length > 0 ? (
+              {faceDescriptors.length >= 25 ? (
                 <div className="enroll-success-banner">
                   {avatarImage && (
                     <img
@@ -293,13 +298,17 @@ export default function EmployeeManager({
                   <div className="enroll-success-text">
                     <div className="enroll-success-title">
                       <CheckCircle2 size={15} color="#10b981" />
-                      <span>Đã nạp {faceDescriptors.length} mẫu khuôn mặt</span>
+                      <span>Đã nạp đủ {faceDescriptors.length}/25 mẫu khuôn mặt AI (5 góc x 5 mẫu)</span>
                     </div>
                   </div>
                 </div>
+              ) : faceDescriptors.length > 0 ? (
+                <div className="enroll-empty-hint" style={{ color: '#e11d48', background: 'rgba(225, 29, 72, 0.08)', border: '1px solid rgba(225, 29, 72, 0.25)', padding: '10px 14px', borderRadius: 8, fontSize: '0.82rem', fontWeight: 600 }}>
+                  ⚠️ Chưa đủ 25 mẫu ảnh (Hiện mới có {faceDescriptors.length}/25). Bắt buộc phải bấm "Quét Lại" để hoàn thành đủ 25 ảnh mới có thể lưu nhân viên!
+                </div>
               ) : (
                 <div className="enroll-empty-hint">
-                  Chưa có dữ liệu khuôn mặt.
+                  Chưa có dữ liệu khuôn mặt. Bắt buộc bấm <b>"Quét Khuôn Mặt"</b> để thu thập đủ 25 ảnh (5 góc x 5 mẫu) trước khi lưu.
                 </div>
               )}
             </div>
@@ -316,8 +325,14 @@ export default function EmployeeManager({
               <button type="button" className="btn-secondary" onClick={() => setShowAddForm(false)}>
                 Hủy
               </button>
-              <button type="submit" className="btn-primary" disabled={isSubmitting}>
-                {isSubmitting ? 'Đang lưu...' : 'Lưu Nhân Viên'}
+              <button 
+                type="submit" 
+                className="btn-primary" 
+                disabled={isSubmitting || faceDescriptors.length < 25}
+                title={faceDescriptors.length < 25 ? `Bắt buộc phải quét đủ 25 mẫu ảnh (Hiện có ${faceDescriptors.length}/25)` : "Lưu nhân viên"}
+                style={faceDescriptors.length < 25 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+              >
+                {isSubmitting ? 'Đang lưu...' : faceDescriptors.length < 25 ? `Chưa đủ 25 ảnh (${faceDescriptors.length}/25)` : 'Lưu Nhân Viên'}
               </button>
             </div>
           </form>

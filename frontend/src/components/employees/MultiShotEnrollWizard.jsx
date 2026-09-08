@@ -259,7 +259,10 @@ export default function MultiShotEnrollWizard({ onComplete, onCancel }) {
   }, [isCameraReady, isModelReady, isComplete]);
 
   const handleFinish = () => {
-    if (capturedTemplates.length === 0) return;
+    if (capturedTemplates.length < TOTAL_SAMPLES || !isComplete) {
+      alert(`❌ Bắt buộc phải quét đủ ${TOTAL_SAMPLES} ảnh mẫu (5 góc x 5 mẫu) trước khi áp dụng! Hiện tại bạn mới quét được ${capturedTemplates.length}/${TOTAL_SAMPLES} ảnh.`);
+      return;
+    }
     const descriptors = capturedTemplates.map(t => t.descriptor);
     const frontSample = capturedTemplates.find(t => t.pose === 'front');
     const primaryAvatar = frontSample ? frontSample.thumbnail : capturedTemplates[0].thumbnail;
@@ -431,15 +434,15 @@ export default function MultiShotEnrollWizard({ onComplete, onCancel }) {
               type="button"
               className="btn-primary wizard-finish-btn"
               onClick={handleFinish}
-              disabled={capturedTemplates.length === 0}
+              disabled={capturedTemplates.length < TOTAL_SAMPLES || !isComplete}
+              title={capturedTemplates.length < TOTAL_SAMPLES ? `Bắt buộc phải thu thập đủ ${TOTAL_SAMPLES} ảnh mẫu (Hiện có ${capturedTemplates.length}/${TOTAL_SAMPLES})` : "Áp dụng đủ 25 mẫu ảnh khuôn mặt"}
+              style={capturedTemplates.length < TOTAL_SAMPLES ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
             >
               <CheckCircle2 size={16} />
               <span>
-                {isComplete
-                  ? `Hoàn Tất (${capturedTemplates.length} Mẫu)`
-                  : capturedTemplates.length > 0
-                  ? `Áp Dụng (${capturedTemplates.length} Mẫu)`
-                  : 'Đang Chờ...'}
+                {capturedTemplates.length >= TOTAL_SAMPLES && isComplete
+                  ? `Hoàn Tất (Đủ ${TOTAL_SAMPLES} Mẫu)`
+                  : `Chưa đủ 25 ảnh (${capturedTemplates.length}/${TOTAL_SAMPLES})`}
               </span>
             </button>
           </div>

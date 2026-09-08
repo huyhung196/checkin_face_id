@@ -31,6 +31,7 @@ export default function App() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [isAutoReload, setIsAutoReload] = useState(true);
   const [latestResult, setLatestResult] = useState(null);
   const [modalItem, setModalItem] = useState(null);
   const [search, setSearch] = useState('');
@@ -66,8 +67,8 @@ export default function App() {
   }, []);
 
   // Tải danh sách log điểm danh (chỉ cần khi là Admin)
-  const fetchLogs = useCallback(async () => {
-    setIsLoadingLogs(true);
+  const fetchLogs = useCallback(async (isSilent = false) => {
+    if (!isSilent) setIsLoadingLogs(true);
     try {
       const res = await logsApi.getLogs({ search, date: selectedDate });
       setLogs(res.data || []);
@@ -79,7 +80,7 @@ export default function App() {
     } catch (err) {
       console.error("Lỗi khi tải logs:", err);
     } finally {
-      setIsLoadingLogs(false);
+      if (!isSilent) setIsLoadingLogs(false);
     }
   }, [search, selectedDate]);
 
@@ -89,6 +90,17 @@ export default function App() {
       fetchLogs();
     }
   }, [fetchEmployees, fetchLogs, isAdmin]);
+
+  // Tự động tải lại nhật ký điểm danh theo chu kỳ (mỗi 4 giây khi là Admin)
+  useEffect(() => {
+    if (!isAdmin || !isAutoReload) return;
+
+    const interval = setInterval(() => {
+      fetchLogs(true);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [isAdmin, isAutoReload, fetchLogs]);
 
   // Xử lý gửi Điểm danh
   const handleCheckinCapture = async (payload) => {
@@ -313,6 +325,8 @@ export default function App() {
                 search={search}
                 setSearch={setSearch}
                 onExport={handleExport}
+                isAutoReload={isAutoReload}
+                setIsAutoReload={setIsAutoReload}
               />
             </div>
           </div>
@@ -359,6 +373,8 @@ export default function App() {
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           onExport={handleExport}
+          isAutoReload={isAutoReload}
+          setIsAutoReload={setIsAutoReload}
         />
       )}
 

@@ -34,7 +34,7 @@ def save_base64_image(image_str: str, prefix: str = "avatar") -> str:
             
         return f"/uploads/{file_name}"
     except Exception as e:
-        print(f"Lỗi khi lưu ảnh base64: {e}")
+        sys.stderr.write(f"Error saving base64 image: {e}\n")
         return ""
 
 
@@ -161,6 +161,14 @@ def create_employee(
                 normalized_descriptors.append(d)
     elif face_descriptor and isinstance(face_descriptor, list) and len(face_descriptor) == 128:
         normalized_descriptors.append(face_descriptor)
+
+    # 0. Bắt buộc phải có đủ 25 mẫu vector khuôn mặt (5 góc x 5 mẫu)
+    if len(normalized_descriptors) < 25:
+        return {
+            "success": False,
+            "is_duplicate": False,
+            "message": f"Bắt buộc phải quét đủ 25 mẫu ảnh khuôn mặt (5 góc x 5 mẫu) để tạo nhân viên mới. Hiện tại chỉ có {len(normalized_descriptors)}/25 mẫu!"
+        }
 
     # 1. Kiểm tra trùng khuôn mặt nếu có vector và không bật force_create
     if normalized_descriptors and not force_create:

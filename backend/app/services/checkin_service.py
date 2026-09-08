@@ -101,24 +101,58 @@ def record_checkin(
     status = "Xác nhận đúng nhân viên"
     final_name = user_name.strip()
 
-    # 3.5. Đánh giá khoảng cách GPS nếu có tọa độ và cấu hình GPS mục tiêu
-    gps_distance = None
-    gps_radius = None
-    gps_matched = None
-    gps_status = "---"
+    def _cleanup_photo():
+        if photo_url:
+            fp = os.path.join(UPLOAD_DIR, os.path.basename(photo_url))
+            if os.path.exists(fp):
+                try:
+                    os.remove(fp)
+                except Exception:
+                    pass
 
-    if user_lat is not None and user_lng is not None:
-        from app.services.gps_service import get_gps_settings, haversine_distance
-        gps_settings = get_gps_settings()
-        if gps_settings and gps_settings.get("is_configured"):
-            target_lat = gps_settings["latitude"]
-            target_lng = gps_settings["longitude"]
-            gps_radius = gps_settings["radius_meters"]
-            gps_distance = haversine_distance(user_lat, user_lng, target_lat, target_lng)
-            gps_matched = 1 if gps_distance <= gps_radius else 0
-            gps_status = f"Đạt ({gps_distance}m)" if gps_matched else f"Không đạt ({gps_distance}m / Cho phép {gps_radius}m)"
-        else:
-            gps_status = "Chưa cài GPS mục tiêu"
+    # 3.5. BẮT BUỘC KIỂM TRA GPS:
+    from app.services.gps_service import get_gps_settings, haversine_distance
+    gps_settings = get_gps_settings()
+    
+    # Điều kiện 1: Hệ thống bắt buộc phải cài đặt GPS mục tiêu
+    if not gps_settings or not gps_settings.get("is_configured"):
+        _cleanup_photo()
+        return {
+            "success": False,
+            "is_matched": True,
+            "message": "Hệ thống chưa cài đặt vị trí GPS mục tiêu! Vui lòng cấu hình vị trí GPS trong phần Quản trị trước khi điểm danh.",
+            "employee": matched_employee,
+            "data": None
+        }
+
+    # Điều kiện 2: Thiết bị người dùng bắt buộc phải gửi tọa độ GPS
+    if user_lat is None or user_lng is None:
+        _cleanup_photo()
+        return {
+            "success": False,
+            "is_matched": True,
+            "message": "Không nhận được tọa độ GPS của bạn! Vui lòng bật định vị (GPS) trên thiết bị và cấp quyền vị trí cho trình duyệt trước khi điểm danh.",
+            "employee": matched_employee,
+            "data": None
+        }
+
+    # Điều kiện 3: Khoảng cách thực tế phải nằm trong bán kính cho phép
+    target_lat = gps_settings["latitude"]
+    target_lng = gps_settings["longitude"]
+    gps_radius = gps_settings["radius_meters"]
+    gps_distance = haversine_distance(user_lat, user_lng, target_lat, target_lng)
+    gps_matched = 1 if gps_distance <= gps_radius else 0
+    gps_status = f"Đạt ({gps_distance}m)" if gps_matched else f"Không đạt ({gps_distance}m / Cho phép {gps_radius}m)"
+
+    if not gps_matched:
+        _cleanup_photo()
+        return {
+            "success": False,
+            "is_matched": True,
+            "message": f"Điểm danh không thành công: Vị trí của bạn ({gps_distance}m) vượt quá bán kính GPS cho phép ({gps_radius}m)!",
+            "employee": matched_employee,
+            "data": None
+        }
 
     # 4. Xác định loại điểm danh (Vào Ca / Tan Ca) theo quy tắc Lần đầu là Vào – Lần cuối là Ra
     now = datetime.now()

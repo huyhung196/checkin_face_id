@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Camera, SwitchCamera, Timer, Sparkles, AlertCircle, UserPlus, ShieldCheck } from 'lucide-react';
+import { Camera, SwitchCamera, Timer, Sparkles, AlertCircle, UserPlus, ShieldCheck, MapPin } from 'lucide-react';
 import { playShutterSound, playBeep, playSuccessChime } from '../utils/audio';
 import { detectFaceFast, matchLiveFace, loadFaceModels } from '../utils/faceEngine';
 
@@ -148,22 +148,42 @@ export default function CameraView({
     setFlashActive(true); playShutterSound();
     setTimeout(() => { setFlashActive(false); playSuccessChime(); }, 120);
 
-    // Lấy tọa độ GPS thiết bị hiện tại nếu có quyền
+    // Bắt buộc lấy tọa độ GPS thiết bị trước khi gửi điểm danh
+    if (!navigator.geolocation) {
+      alert("❌ Trình duyệt hoặc thiết bị của bạn không hỗ trợ định vị GPS!");
+      return;
+    }
+
     let userLat = null, userLng = null;
-    if (navigator.geolocation) {
-      try {
-        const pos = await new Promise((resolve) => {
-          navigator.geolocation.getCurrentPosition(resolve, () => resolve(null), {
-            enableHighAccuracy: true,
-            timeout: 5000,
-            maximumAge: 0
-          });
+    let gpsErrorMsg = null;
+
+    try {
+      const pos = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 7000,
+          maximumAge: 0
         });
-        if (pos && pos.coords) {
-          userLat = pos.coords.latitude;
-          userLng = pos.coords.longitude;
-        }
-      } catch (e) { /* ignored */ }
+      });
+      if (pos && pos.coords) {
+        userLat = pos.coords.latitude;
+        userLng = pos.coords.longitude;
+      }
+    } catch (err) {
+      if (err.code === 1) {
+        gpsErrorMsg = "Bạn đã từ chối quyền GPS. Vui lòng cấp quyền vị trí cho trang web để điểm danh!";
+      } else if (err.code === 2) {
+        gpsErrorMsg = "Không thể lấy tín hiệu định vị GPS. Vui lòng bật GPS/Vị trí trên thiết bị!";
+      } else if (err.code === 3) {
+        gpsErrorMsg = "Hết thời gian chờ phản hồi GPS. Vui lòng kiểm tra lại GPS và thử lại!";
+      } else {
+        gpsErrorMsg = "Không lấy được vị trí GPS: " + (err.message || "Lỗi GPS");
+      }
+    }
+
+    if (gpsErrorMsg || userLat === null || userLng === null) {
+      alert(`❌ ${gpsErrorMsg || "Không lấy được tọa độ GPS! Bắt buộc phải bật GPS để điểm danh."}`);
+      return;
     }
 
     onCapture({
@@ -201,7 +221,22 @@ export default function CameraView({
   return (
     <div className="glass-card camera-card">
       <div className="card-heading">
-        <h2 className="card-title"><Camera size={18} color="#FD6900" /> Camera Điểm Danh</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <h2 className="card-title" style={{ margin: 0 }}><Camera size={18} color="#FD6900" /> Camera Điểm Danh</h2>
+          <span style={{
+            fontSize: '0.72rem',
+            color: '#10b981',
+            background: 'rgba(16, 185, 129, 0.12)',
+            padding: '2px 8px',
+            borderRadius: 6,
+            fontWeight: 700,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4
+          }}>
+            <MapPin size={11} /> Bắt buộc GPS
+          </span>
+        </div>
         {devices.length > 1 && (
           <button type="button" className="btn-icon" onClick={handleSwitchCamera} title="Đổi camera" style={{ width: 34, height: 34 }}>
             <SwitchCamera size={15} />

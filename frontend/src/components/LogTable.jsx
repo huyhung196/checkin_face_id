@@ -25,7 +25,9 @@ export default function LogTable({
   setSearch,
   selectedDate = '',
   setSelectedDate,
-  onExport
+  onExport,
+  isAutoReload = true,
+  setIsAutoReload
 }) {
   const todayStr = new Date().toISOString().slice(0, 10);
 
@@ -38,11 +40,43 @@ export default function LogTable({
           <span>Nhật Ký Điểm Danh ({logs.length})</span>
         </h2>
 
-        <div className="log-actions">
+        <div className="log-actions" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {setIsAutoReload && (
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => setIsAutoReload(!isAutoReload)}
+              title={isAutoReload ? "Tự động tải lại mỗi 4s đang BẬT. Bấm để tạm dừng" : "Tự động tải lại đang TẮT. Bấm để bật"}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                padding: '6px 11px',
+                borderRadius: 8,
+                borderColor: isAutoReload ? 'rgba(16, 185, 129, 0.4)' : undefined,
+                background: isAutoReload ? 'rgba(16, 185, 129, 0.08)' : undefined,
+                color: isAutoReload ? '#10b981' : 'var(--text-muted)',
+                cursor: 'pointer'
+              }}
+            >
+              <span style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                backgroundColor: isAutoReload ? '#10b981' : '#94a3b8',
+                boxShadow: isAutoReload ? '0 0 6px #10b981' : 'none',
+                display: 'inline-block'
+              }} />
+              <span>{isAutoReload ? 'Live (4s)' : 'Tạm dừng'}</span>
+            </button>
+          )}
+
           <button 
             type="button" 
             className="btn-secondary"
-            onClick={onRefresh}
+            onClick={() => onRefresh(false)}
             disabled={isLoading}
             title="Làm mới bảng log"
           >
