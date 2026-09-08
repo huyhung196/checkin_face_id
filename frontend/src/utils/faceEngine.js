@@ -269,16 +269,16 @@ export function checkFaceCentering(video, box) {
   const cy = (box.y + box.height / 2) / vh;
   const faceWidthRatio = box.width / vw;
 
-  // Giới hạn nghiêm ngặt vùng Oval chính giữa
-  const isCentered = cx >= 0.36 && cx <= 0.64 && cy >= 0.25 && cy <= 0.65;
+  // Giới hạn vùng Oval chính giữa (mở rộng cy từ 0.20 -> 0.72 để khi cúi/ngẩng nhẹ không bị báo lệch khung)
+  const isCentered = cx >= 0.35 && cx <= 0.65 && cy >= 0.20 && cy <= 0.72;
   const isSizeOk = faceWidthRatio >= 0.18 && faceWidthRatio <= 0.65;
 
   let reason = '';
   if (!isCentered) {
-    if (cy > 0.65) reason = 'Đưa khuôn mặt lên cao hơn vào hình bầu dục';
-    else if (cy < 0.25) reason = 'Hạ khuôn mặt xuống một chút vào hình bầu dục';
-    else if (cx < 0.36) reason = 'Di chuyển sang phải vào hình bầu dục';
-    else if (cx > 0.64) reason = 'Di chuyển sang trái vào hình bầu dục';
+    if (cy > 0.72) reason = 'Đưa khuôn mặt lên cao hơn vào hình bầu dục';
+    else if (cy < 0.20) reason = 'Hạ khuôn mặt xuống một chút vào hình bầu dục';
+    else if (cx < 0.35) reason = 'Di chuyển sang phải vào hình bầu dục';
+    else if (cx > 0.65) reason = 'Di chuyển sang trái vào hình bầu dục';
     else reason = 'Đưa khuôn mặt vào ô bầu dục chính giữa';
   } else if (!isSizeOk) {
     if (faceWidthRatio < 0.18) reason = 'Tiến lại gần camera hơn';
@@ -325,8 +325,8 @@ export function checkPoseMatch(poseKey, yaw, pitch, roll, sideSign = null, pitch
   if (poseKey === 'front') return ay < 15 && ap < 12;
   if (poseKey === 'left') return ay >= 7 && ay <= 42 && ap < 24 && yaw <= -4;
   if (poseKey === 'right') return ay >= 7 && ay <= 42 && ap < 24 && yaw >= 4 && (sideSign === null || signOf(yaw) !== sideSign);
-  if (poseKey === 'up') return ap >= 13 && ap <= 42 && ay < 24 && pitch <= -13;
-  if (poseKey === 'down') return ap >= 8 && ap <= 38 && ay < 24 && pitch >= 7 && (pitchSign === null || signOf(pitch) !== pitchSign);
+  if (poseKey === 'up') return ap >= 8 && ap <= 42 && ay < 24 && pitch <= -8;
+  if (poseKey === 'down') return ap >= 3.0 && ap <= 38 && ay < 24 && pitch >= 3.0 && (pitchSign === null || signOf(pitch) !== pitchSign);
   return false;
 }
 

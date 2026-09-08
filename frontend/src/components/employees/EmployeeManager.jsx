@@ -267,14 +267,7 @@ export default function EmployeeManager({
 
             {/* Phần Nạp Face ID */}
             <div className="face-enroll-section">
-              <div className="face-enroll-header">
-                <div>
-                  <h4 className="face-enroll-title">
-                    <Sparkles size={16} />
-                    <span>Dữ Liệu Khuôn Mặt</span>
-                  </h4>
-                </div>
-
+              <div className="face-enroll-header" style={{ justifyContent: 'flex-end' }}>
                 <button
                   type="button"
                   className="btn-primary enroll-launch-btn"
@@ -285,7 +278,7 @@ export default function EmployeeManager({
                 </button>
               </div>
 
-              {/* Status Badge */}
+              {/* Status Badge khi đã quét đủ/đang dở */}
               {faceDescriptors.length >= 25 ? (
                 <div className="enroll-success-banner">
                   {avatarImage && (
@@ -306,11 +299,7 @@ export default function EmployeeManager({
                 <div className="enroll-empty-hint" style={{ color: '#e11d48', background: 'rgba(225, 29, 72, 0.08)', border: '1px solid rgba(225, 29, 72, 0.25)', padding: '10px 14px', borderRadius: 8, fontSize: '0.82rem', fontWeight: 600 }}>
                   ⚠️ Chưa đủ 25 mẫu ảnh (Hiện mới có {faceDescriptors.length}/25). Bắt buộc phải bấm "Quét Lại" để hoàn thành đủ 25 ảnh mới có thể lưu nhân viên!
                 </div>
-              ) : (
-                <div className="enroll-empty-hint">
-                  Chưa có dữ liệu khuôn mặt. Bắt buộc bấm <b>"Quét Khuôn Mặt"</b> để thu thập đủ 25 ảnh (5 góc x 5 mẫu) trước khi lưu.
-                </div>
-              )}
+              ) : null}
             </div>
 
             {/* Modal / Wizard chụp đa góc */}

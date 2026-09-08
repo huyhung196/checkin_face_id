@@ -297,9 +297,6 @@ export default function MultiShotEnrollWizard({ onComplete, onCancel }) {
             <Sparkles size={18} color="var(--brand-orange)" />
             <span>Quét Khuôn Mặt AI — 5 Góc Tự Động</span>
           </h3>
-          <p className="wizard-subtitle">
-            Tự động thu {REQUIRED_SAMPLES} mẫu × {POSES.length} góc = {TOTAL_SAMPLES} vector 128D
-          </p>
         </div>
         <button type="button" className="btn-icon" onClick={onCancel} style={{ width: 32, height: 32, flexShrink: 0 }}>
           <X size={16} />
