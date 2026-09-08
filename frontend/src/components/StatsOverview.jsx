@@ -4,34 +4,28 @@ import { Users, History, ClockAlert, LogOut, LogIn, AlertTriangle, TimerOff } fr
 export default function StatsOverview({ stats = {} }) {
   return (
     <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))' }}>
-      {/* 1. Lượt Vào Ca (Check-in) */}
+      {/* 1. Lượt Vào Ca Hôm Nay */}
       <div className="glass-card stat-card">
         <div className="stat-icon-wrapper green">
           <LogIn size={20} />
         </div>
         <div style={{ minWidth: 0 }}>
-          <div className="stat-label">Vào ca (Check-in)</div>
+          <div className="stat-label">Vào ca hôm nay</div>
           <div className="stat-value" style={{ color: '#10b981' }}>
             {stats.today_checkin_count ?? 0}
-          </div>
-          <div className="stat-sub">
-            Tổng: <b>{stats.total_checkin_count ?? 0}</b> lượt
           </div>
         </div>
       </div>
 
-      {/* 2. Lượt Tan Ca (Check-out) */}
+      {/* 2. Lượt Tan Ca Hôm Nay */}
       <div className="glass-card stat-card">
         <div className="stat-icon-wrapper rose">
           <LogOut size={20} />
         </div>
         <div style={{ minWidth: 0 }}>
-          <div className="stat-label">Tan ca (Check-out)</div>
+          <div className="stat-label">Tan ca hôm nay</div>
           <div className="stat-value" style={{ color: '#f43f5e' }}>
             {stats.today_checkout_count ?? 0}
-          </div>
-          <div className="stat-sub">
-            Tổng: <b>{stats.total_checkout_count ?? 0}</b> lượt
           </div>
         </div>
       </div>

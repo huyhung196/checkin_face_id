@@ -120,9 +120,9 @@ export default function LogTable({
         </div>
       </div>
 
-      {/* Toolbar lọc đa chiều: Hàng 1 tìm kiếm & ngày */}
-      <div className="table-toolbar" style={{ marginBottom: 10 }}>
-        <div className="search-box">
+      {/* Toolbar lọc đa chiều: Tìm kiếm + Chọn Ngày + Combobox Tình Trạng */}
+      <div className="table-toolbar" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+        <div className="search-box" style={{ flex: '1 1 180px', minWidth: 150 }}>
           <Search size={15} className="search-icon" />
           <input 
             type="text" 
@@ -133,7 +133,7 @@ export default function LogTable({
           />
         </div>
 
-        <div className="date-filter-group">
+        <div className="date-filter-group" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           <div className="date-filter-box">
             <Calendar size={14} className="date-icon" />
             <input 
@@ -165,134 +165,49 @@ export default function LogTable({
             </button>
           )}
         </div>
-      </div>
 
-      {/* Toolbar lọc đa chiều: Hàng 2 Trạng thái Chấm công & Phép */}
-      {setAttendanceFilter && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          overflowX: 'auto',
-          paddingBottom: 8,
-          marginBottom: 12,
-          borderBottom: '1px solid var(--border-card)'
-        }}>
-          <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, marginRight: 2 }}>
-            <SlidersHorizontal size={12} /> Tình trạng:
-          </span>
+        {/* Combobox Tình trạng chấm công */}
+        {setAttendanceFilter && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <select
+              className="search-input"
+              style={{
+                padding: '7px 12px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                borderRadius: 8,
+                background: attendanceFilter !== 'all' ? 'rgba(253, 105, 0, 0.08)' : '#fff',
+                borderColor: attendanceFilter !== 'all' ? 'var(--brand-orange)' : 'var(--border-card)',
+                color: attendanceFilter !== 'all' ? 'var(--brand-orange)' : 'var(--text-main)',
+                cursor: 'pointer',
+                minWidth: 175
+              }}
+              value={attendanceFilter}
+              onChange={(e) => setAttendanceFilter(e.target.value)}
+            >
+              <option value="all">Tất cả tình trạng</option>
+              <option value="unexcused">Chưa xin phép {stats.unexcused_count > 0 ? `(${stats.unexcused_count})` : ''}</option>
+              <option value="late">Đi trễ {stats.late_count > 0 ? `(${stats.late_count})` : ''}</option>
+              <option value="early">Về sớm {stats.early_count > 0 ? `(${stats.early_count})` : ''}</option>
+              <option value="excused">Đã có phép</option>
+              <option value="checkin">Vào ca ({stats.today_checkin_count || 0})</option>
+              <option value="checkout">Tan ca ({stats.today_checkout_count || 0})</option>
+            </select>
 
-          <button
-            type="button"
-            className={`btn-date-chip ${attendanceFilter === 'all' ? 'active' : ''}`}
-            onClick={() => setAttendanceFilter('all')}
-            style={{ flexShrink: 0 }}
-          >
-            Tất cả
-          </button>
-
-          <button
-            type="button"
-            className={`btn-date-chip ${attendanceFilter === 'unexcused' ? 'active' : ''}`}
-            onClick={() => setAttendanceFilter('unexcused')}
-            style={{
-              flexShrink: 0,
-              borderColor: attendanceFilter === 'unexcused' ? '#ef4444' : 'rgba(239, 68, 68, 0.3)',
-              color: attendanceFilter === 'unexcused' ? '#fff' : '#ef4444',
-              background: attendanceFilter === 'unexcused' ? '#ef4444' : 'rgba(239, 68, 68, 0.08)',
-              fontWeight: 700
-            }}
-            title="Các ca đi trễ hoặc về sớm chưa được HR đánh dấu có phép"
-          >
-            ⚠️ Cần xử lý (Chưa phép)
-            {stats.unexcused_count > 0 && (
-              <span style={{
-                marginLeft: 5,
-                background: attendanceFilter === 'unexcused' ? '#fff' : '#ef4444',
-                color: attendanceFilter === 'unexcused' ? '#ef4444' : '#fff',
-                fontSize: '0.68rem',
-                padding: '1px 5px',
-                borderRadius: 10,
-                fontWeight: 800
-              }}>
-                {stats.unexcused_count}
-              </span>
+            {attendanceFilter !== 'all' && (
+              <button
+                type="button"
+                className="btn-date-chip clear"
+                onClick={() => setAttendanceFilter('all')}
+                title="Bỏ lọc tình trạng"
+                style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+              >
+                Đặt lại
+              </button>
             )}
-          </button>
-
-          <button
-            type="button"
-            className={`btn-date-chip ${attendanceFilter === 'late' ? 'active' : ''}`}
-            onClick={() => setAttendanceFilter('late')}
-            style={{
-              flexShrink: 0,
-              borderColor: attendanceFilter === 'late' ? '#f59e0b' : undefined,
-              color: attendanceFilter === 'late' ? '#fff' : '#f59e0b',
-              background: attendanceFilter === 'late' ? '#f59e0b' : 'rgba(245, 158, 11, 0.08)'
-            }}
-          >
-            🟠 Đi Trễ
-          </button>
-
-          <button
-            type="button"
-            className={`btn-date-chip ${attendanceFilter === 'early' ? 'active' : ''}`}
-            onClick={() => setAttendanceFilter('early')}
-            style={{
-              flexShrink: 0,
-              borderColor: attendanceFilter === 'early' ? '#ef4444' : undefined,
-              color: attendanceFilter === 'early' ? '#fff' : '#ef4444',
-              background: attendanceFilter === 'early' ? '#ef4444' : 'rgba(239, 68, 68, 0.08)'
-            }}
-          >
-            🔴 Về Sớm
-          </button>
-
-            <button
-            type="button"
-            className={`btn-date-chip ${attendanceFilter === 'excused' ? 'active' : ''}`}
-            onClick={() => setAttendanceFilter('excused')}
-            style={{
-              flexShrink: 0,
-              borderColor: attendanceFilter === 'excused' ? '#10b981' : undefined,
-              color: attendanceFilter === 'excused' ? '#fff' : '#10b981',
-              background: attendanceFilter === 'excused' ? '#10b981' : 'rgba(16, 185, 129, 0.08)'
-            }}
-          >
-            🟢 Đã Có Phép
-          </button>
-
-          <button
-            type="button"
-            className={`btn-date-chip ${attendanceFilter === 'checkin' ? 'active' : ''}`}
-            onClick={() => setAttendanceFilter('checkin')}
-            style={{
-              flexShrink: 0,
-              borderColor: attendanceFilter === 'checkin' ? '#10b981' : undefined,
-              color: attendanceFilter === 'checkin' ? '#fff' : '#10b981',
-              background: attendanceFilter === 'checkin' ? '#10b981' : 'rgba(16, 185, 129, 0.08)'
-            }}
-            title="Lọc chỉ các lượt Vào Ca (Check-in)"
-          >
-            📥 Vào Ca ({stats.today_checkin_count || 0})
-          </button>
-
-          <button
-            type="button"
-            className={`btn-date-chip ${attendanceFilter === 'checkout' ? 'active' : ''}`}
-            onClick={() => setAttendanceFilter('checkout')}
-            style={{
-              flexShrink: 0,
-              borderColor: attendanceFilter === 'checkout' ? '#f43f5e' : undefined,
-              color: attendanceFilter === 'checkout' ? '#fff' : '#f43f5e',
-              background: attendanceFilter === 'checkout' ? '#f43f5e' : 'rgba(244, 63, 94, 0.08)'
-            }}
-            title="Lọc chỉ các lượt Tan Ca (Check-out)"
-          >
-            📤 Tan Ca ({stats.today_checkout_count || 0})
-          </button>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {/* Content */}
       {logs.length === 0 ? (
@@ -383,18 +298,18 @@ export default function LogTable({
                       <td>
                         {row.check_type === 'Tan Ca' ? (
                           <div>
-                            <span className="confidence-tag" style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#ef4444', fontWeight: 700 }}>
-                              🔴 Tan Ca
+                            <span className="confidence-tag" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', fontWeight: 600 }}>
+                              Tan Ca
                             </span>
                             {row.working_duration && row.working_duration !== '---' && (
-                              <div style={{ fontSize: '0.72rem', color: '#d97706', marginTop: 3, fontWeight: 600 }}>
-                                ⏱️ {row.working_duration}
+                              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2, fontWeight: 500 }}>
+                                {row.working_duration}
                               </div>
                             )}
                           </div>
                         ) : row.check_type === 'Vào Ca' ? (
-                          <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981', fontWeight: 700 }}>
-                            🟢 Vào Ca
+                          <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#059669', fontWeight: 600 }}>
+                            Vào Ca
                           </span>
                         ) : (
                           <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>---</span>
@@ -406,22 +321,22 @@ export default function LogTable({
                         {isLate ? (
                           <span 
                             className="confidence-tag"
-                            style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#d97706', fontWeight: 700 }}
+                            style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#d97706', fontWeight: 600 }}
                             title={`Đi trễ ${row.late_minutes} phút so với giờ quy định`}
                           >
-                            🟠 Trễ {row.late_minutes}p
+                            Trễ {row.late_minutes}p
                           </span>
                         ) : isEarly ? (
                           <span 
                             className="confidence-tag"
-                            style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', fontWeight: 700 }}
+                            style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#ef4444', fontWeight: 600 }}
                             title={`Về sớm ${row.early_minutes} phút so với giờ tan ca`}
                           >
-                            🔴 Sớm {row.early_minutes}p
+                            Sớm {row.early_minutes}p
                           </span>
                         ) : (
-                          <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', fontWeight: 600 }}>
-                            ✓ Đúng Giờ
+                          <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.08)', color: '#059669', fontWeight: 600 }}>
+                            Đúng Giờ
                           </span>
                         )}
                       </td>
@@ -429,42 +344,31 @@ export default function LogTable({
                       {/* Cột Xin Phép (HR) */}
                       <td>
                         {isLate || isEarly ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                             <button
                               type="button"
                               onClick={() => onOpenPermissionModal && onOpenPermissionModal(row)}
-                              title={hasPerm ? `Đã duyệt phép: ${row.permission_note || 'Có phép'} (Bấm để chỉnh sửa)` : 'Bấm để đánh dấu đã có xin phép'}
+                              title={hasPerm ? `Đã duyệt phép: ${row.permission_note || 'Có phép'} (Bấm để sửa)` : 'Bấm để duyệt có phép'}
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: 4,
                                 padding: '3px 8px',
                                 borderRadius: 6,
                                 fontSize: '0.72rem',
-                                fontWeight: 700,
-                                border: hasPerm ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(239, 68, 68, 0.35)',
-                                background: hasPerm ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.08)',
-                                color: hasPerm ? '#10b981' : '#ef4444',
+                                fontWeight: 600,
+                                border: hasPerm ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
+                                background: hasPerm ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.06)',
+                                color: hasPerm ? '#059669' : '#ef4444',
                                 cursor: 'pointer',
                                 textAlign: 'left',
                                 width: 'fit-content'
                               }}
                             >
-                              {hasPerm ? (
-                                <>
-                                  <CheckCircle2 size={12} />
-                                  <span>Đã có phép</span>
-                                </>
-                              ) : (
-                                <>
-                                  <AlertTriangle size={12} />
-                                  <span>Chưa phép (Duyệt)</span>
-                                </>
-                              )}
+                              {hasPerm ? 'Đã có phép' : 'Chưa duyệt'}
                             </button>
                             {hasPerm && row.permission_note && (
                               <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontStyle: 'italic', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={row.permission_note}>
-                                💬 {row.permission_note}
+                                {row.permission_note}
                               </div>
                             )}
                           </div>
@@ -475,8 +379,8 @@ export default function LogTable({
 
                       <td>
                         {row.match_confidence >= 50.0 ? (
-                          <span className="confidence-tag">
-                            ✓ {row.match_confidence}%
+                          <span className="confidence-tag" style={{ fontFamily: 'var(--font-mono)' }}>
+                            {row.match_confidence}%
                           </span>
                         ) : (
                           <span className="confidence-tag unmatched">
@@ -486,28 +390,26 @@ export default function LogTable({
                       </td>
                       <td>
                         {row.gps_matched === 1 ? (
-                          <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
-                            ✓ Đạt ({row.gps_distance}m)
+                          <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#059669' }}>
+                            Đạt ({row.gps_distance}m)
                           </span>
                         ) : row.gps_matched === 0 ? (
-                          <span className="confidence-tag unmatched" style={{ background: 'rgba(225, 29, 72, 0.15)', color: '#e11d48' }} title={`Khoảng cách ${row.gps_distance}m (Bán kính ${row.gps_radius}m)`}>
-                            ❌ Vi Phạm ({row.gps_distance}m)
+                          <span className="confidence-tag unmatched" style={{ background: 'rgba(225, 29, 72, 0.1)', color: '#e11d48' }} title={`Khoảng cách ${row.gps_distance}m (Bán kính ${row.gps_radius}m)`}>
+                            Ngoài vùng ({row.gps_distance}m)
                           </span>
                         ) : (
                           <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>---</span>
                         )}
                       </td>
                       <td>
-                        <div className="log-time-cell">
-                          <Clock size={13} color="#FD6900" />
-                          <span>{row.formatted_time}</span>
-                        </div>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-main)', whiteSpace: 'nowrap', fontWeight: 500 }}>
+                          {row.formatted_time}
+                        </span>
                       </td>
                       <td>
-                        <div className="log-device-cell">
-                          <Smartphone size={13} />
-                          <span>{row.device_info || 'Không rõ'}</span>
-                        </div>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', maxWidth: 120, display: 'inline-block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={row.device_info}>
+                          {row.device_info || '---'}
+                        </span>
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <button 
@@ -561,22 +463,22 @@ export default function LogTable({
 
                       <div className="log-mobile-meta-row" style={{ flexWrap: 'wrap', gap: 4 }}>
                         {row.check_type === 'Tan Ca' ? (
-                          <span className="confidence-tag" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', fontWeight: 700 }}>
-                            🔴 Tan Ca {row.working_duration && row.working_duration !== '---' ? `(${row.working_duration})` : ''}
+                          <span className="confidence-tag" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', fontWeight: 600 }}>
+                            Tan Ca {row.working_duration && row.working_duration !== '---' ? `(${row.working_duration})` : ''}
                           </span>
                         ) : row.check_type === 'Vào Ca' ? (
-                          <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontWeight: 700 }}>
-                            🟢 Vào Ca
+                          <span className="confidence-tag" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#059669', fontWeight: 600 }}>
+                            Vào Ca
                           </span>
                         ) : null}
 
                         {isLate ? (
-                          <span className="confidence-tag" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#d97706', fontWeight: 700 }}>
-                            🟠 Trễ {row.late_minutes}p
+                          <span className="confidence-tag" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#d97706', fontWeight: 600 }}>
+                            Trễ {row.late_minutes}p
                           </span>
                         ) : isEarly ? (
-                          <span className="confidence-tag" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', fontWeight: 700 }}>
-                            🔴 Sớm {row.early_minutes}p
+                          <span className="confidence-tag" style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#ef4444', fontWeight: 600 }}>
+                            Sớm {row.early_minutes}p
                           </span>
                         ) : null}
 
@@ -585,22 +487,21 @@ export default function LogTable({
                             type="button"
                             onClick={() => onOpenPermissionModal && onOpenPermissionModal(row)}
                             style={{
-                              border: hasPerm ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(239, 68, 68, 0.4)',
-                              background: hasPerm ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.1)',
-                              color: hasPerm ? '#10b981' : '#ef4444',
+                              border: hasPerm ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
+                              background: hasPerm ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.06)',
+                              color: hasPerm ? '#059669' : '#ef4444',
                               fontSize: '0.7rem',
                               padding: '2px 6px',
                               borderRadius: 4,
-                              fontWeight: 700,
+                              fontWeight: 600,
                               cursor: 'pointer'
                             }}
                           >
-                            {hasPerm ? '✓ Có phép' : '⚠️ Chưa phép'}
+                            {hasPerm ? 'Có phép' : 'Chưa phép'}
                           </button>
                         )}
 
                         <span className="log-mobile-time">
-                          <Clock size={11} color="#FD6900" />
                           {row.formatted_time}
                         </span>
                       </div>
@@ -619,7 +520,6 @@ export default function LogTable({
                   {row.device_info && (
                     <div className="log-mobile-card-bottom">
                       <span className="log-mobile-device">
-                        <Smartphone size={11} />
                         {row.device_info}
                       </span>
                     </div>
