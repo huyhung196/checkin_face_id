@@ -39,6 +39,7 @@ export default function App() {
   const [search, setSearch] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [attendanceFilter, setAttendanceFilter] = useState('all'); // 'all' | 'unexcused' | 'late' | 'early' | 'excused'
+  const [gpsSubTab, setGpsSubTab] = useState('gps'); // 'gps' | 'shift'
   const [showShiftModal, setShowShiftModal] = useState(false);
   const [permissionModalItem, setPermissionModalItem] = useState(null);
   const [initialEnrollDescriptor, setInitialEnrollDescriptor] = useState(null);
@@ -83,6 +84,10 @@ export default function App() {
       setLogs(res.data || []);
       setStats({
         today_count: res.today_count || 0,
+        today_checkin_count: res.today_checkin_count || 0,
+        today_checkout_count: res.today_checkout_count || 0,
+        total_checkin_count: res.total_checkin_count || 0,
+        total_checkout_count: res.total_checkout_count || 0,
         late_count: res.late_count || 0,
         early_count: res.early_count || 0,
         unexcused_count: res.unexcused_count || 0,
@@ -290,10 +295,13 @@ export default function App() {
             <button 
               type="button" 
               className={`tab-btn ${activeTab === 'gps' ? 'active' : ''}`}
-              onClick={() => setActiveTab('gps')}
+              onClick={() => {
+                setGpsSubTab('gps');
+                setActiveTab('gps');
+              }}
             >
               <MapPin size={18} />
-              <span>Cấu Hình GPS</span>
+              <span>Cấu Hình GPS & Ca</span>
             </button>
 
             <button 
@@ -342,7 +350,10 @@ export default function App() {
                 attendanceFilter={attendanceFilter}
                 setAttendanceFilter={setAttendanceFilter}
                 stats={stats}
-                onOpenShiftSetup={() => setShowShiftModal(true)}
+                onOpenShiftSetup={() => {
+                  setGpsSubTab('shift');
+                  setActiveTab('gps');
+                }}
                 onOpenPermissionModal={(item) => setPermissionModalItem(item)}
               />
             </div>
@@ -370,10 +381,12 @@ export default function App() {
         />
       )}
 
-      {/* Tab 3: Cấu hình GPS (Chỉ Admin) */}
+      {/* Tab 3: Cấu hình GPS & Ca làm việc (Chỉ Admin) */}
       {isAdmin && activeTab === 'gps' && (
         <GpsCheckinView 
           employees={employees}
+          initialSubTab={gpsSubTab}
+          onSubTabChange={setGpsSubTab}
         />
       )}
 
@@ -395,7 +408,10 @@ export default function App() {
           attendanceFilter={attendanceFilter}
           setAttendanceFilter={setAttendanceFilter}
           stats={stats}
-          onOpenShiftSetup={() => setShowShiftModal(true)}
+          onOpenShiftSetup={() => {
+            setGpsSubTab('shift');
+            setActiveTab('gps');
+          }}
           onOpenPermissionModal={(item) => setPermissionModalItem(item)}
         />
       )}
@@ -403,7 +419,7 @@ export default function App() {
       {/* Image Modal */}
       <ImageModal item={modalItem} onClose={() => setModalItem(null)} />
 
-      {/* Modal Cấu Hình Ca Làm Việc */}
+      {/* Modal Cấu Hình Ca Làm Việc (Overlay dự phòng) */}
       <ShiftSetupModal
         isOpen={showShiftModal}
         onClose={() => setShowShiftModal(false)}
@@ -441,10 +457,13 @@ export default function App() {
               <button 
                 type="button" 
                 className={`mobile-nav-btn ${activeTab === 'gps' ? 'active' : ''}`}
-                onClick={() => setActiveTab('gps')}
+                onClick={() => {
+                  setGpsSubTab('gps');
+                  setActiveTab('gps');
+                }}
               >
                 <MapPin size={20} />
-                <span>GPS</span>
+                <span>GPS & Ca</span>
               </button>
 
               <button 

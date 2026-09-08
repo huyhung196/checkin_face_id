@@ -307,6 +307,10 @@ def get_checkin_logs(
         query += " AND attendance_status IN ('Đi Trễ', 'Về Sớm') AND (has_permission = 0 OR has_permission IS NULL)"
     elif clean_att == "excused":
         query += " AND has_permission = 1"
+    elif clean_att in ("checkin", "vaoca", "vao_ca"):
+        query += " AND check_type = 'Vào Ca'"
+    elif clean_att in ("checkout", "tanca", "tan_ca"):
+        query += " AND check_type = 'Tan Ca'"
 
     query += " ORDER BY id DESC LIMIT ?"
     params.append(limit)
@@ -317,6 +321,18 @@ def get_checkin_logs(
     today_str = datetime.now().strftime("%Y-%m-%d")
     cursor.execute("SELECT COUNT(*) as count FROM checkin_logs WHERE timestamp LIKE ?", (f"{today_str}%",))
     today_count = cursor.fetchone()["count"]
+
+    cursor.execute("SELECT COUNT(*) as count FROM checkin_logs WHERE timestamp LIKE ? AND check_type = 'Vào Ca'", (f"{today_str}%",))
+    today_checkin_count = cursor.fetchone()["count"]
+
+    cursor.execute("SELECT COUNT(*) as count FROM checkin_logs WHERE timestamp LIKE ? AND check_type = 'Tan Ca'", (f"{today_str}%",))
+    today_checkout_count = cursor.fetchone()["count"]
+
+    cursor.execute("SELECT COUNT(*) as count FROM checkin_logs WHERE check_type = 'Vào Ca'")
+    total_checkin_count = cursor.fetchone()["count"]
+
+    cursor.execute("SELECT COUNT(*) as count FROM checkin_logs WHERE check_type = 'Tan Ca'")
+    total_checkout_count = cursor.fetchone()["count"]
 
     cursor.execute("SELECT COUNT(*) as count FROM checkin_logs WHERE timestamp LIKE ? AND attendance_status = 'Đi Trễ'", (f"{today_str}%",))
     late_count = cursor.fetchone()["count"]
@@ -338,6 +354,10 @@ def get_checkin_logs(
     return {
         "logs": [dict(r) for r in rows],
         "today_count": today_count,
+        "today_checkin_count": today_checkin_count,
+        "today_checkout_count": today_checkout_count,
+        "total_checkin_count": total_checkin_count,
+        "total_checkout_count": total_checkout_count,
         "late_count": late_count,
         "early_count": early_count,
         "unexcused_count": unexcused_count,

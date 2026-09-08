@@ -248,7 +248,7 @@ export default function LogTable({
             🔴 Về Sớm
           </button>
 
-          <button
+            <button
             type="button"
             className={`btn-date-chip ${attendanceFilter === 'excused' ? 'active' : ''}`}
             onClick={() => setAttendanceFilter('excused')}
@@ -260,6 +260,36 @@ export default function LogTable({
             }}
           >
             🟢 Đã Có Phép
+          </button>
+
+          <button
+            type="button"
+            className={`btn-date-chip ${attendanceFilter === 'checkin' ? 'active' : ''}`}
+            onClick={() => setAttendanceFilter('checkin')}
+            style={{
+              flexShrink: 0,
+              borderColor: attendanceFilter === 'checkin' ? '#10b981' : undefined,
+              color: attendanceFilter === 'checkin' ? '#fff' : '#10b981',
+              background: attendanceFilter === 'checkin' ? '#10b981' : 'rgba(16, 185, 129, 0.08)'
+            }}
+            title="Lọc chỉ các lượt Vào Ca (Check-in)"
+          >
+            📥 Vào Ca ({stats.today_checkin_count || 0})
+          </button>
+
+          <button
+            type="button"
+            className={`btn-date-chip ${attendanceFilter === 'checkout' ? 'active' : ''}`}
+            onClick={() => setAttendanceFilter('checkout')}
+            style={{
+              flexShrink: 0,
+              borderColor: attendanceFilter === 'checkout' ? '#f43f5e' : undefined,
+              color: attendanceFilter === 'checkout' ? '#fff' : '#f43f5e',
+              background: attendanceFilter === 'checkout' ? '#f43f5e' : 'rgba(244, 63, 94, 0.08)'
+            }}
+            title="Lọc chỉ các lượt Tan Ca (Check-out)"
+          >
+            📤 Tan Ca ({stats.today_checkout_count || 0})
           </button>
         </div>
       )}

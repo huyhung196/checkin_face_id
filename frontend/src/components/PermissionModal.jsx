@@ -55,11 +55,11 @@ export default function PermissionModal({ logItem, onClose, onSaveSuccess }) {
   const isEarly = attStatus === 'Về Sớm';
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose}>
       <div 
         className="glass-card modal-content" 
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: 480, width: '92%', padding: '24px' }}
+        style={{ maxWidth: 480, width: '92%', padding: '24px', margin: 'auto' }}
       >
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
