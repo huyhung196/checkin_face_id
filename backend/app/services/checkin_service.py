@@ -81,8 +81,20 @@ def record_checkin(
             employee_code = emp["employee_code"]
             user_name = emp["full_name"]
 
-    # 3.1. CHẶN NGƯỜI LẠ: Nếu không nhận diện được nhân viên -> Từ chối điểm danh, không lưu DB
+    # 3.1. CHẶN NGƯỜI LẠ: Nếu không nhận diện được nhân viên -> Gửi cảnh báo Telegram & từ chối điểm danh
     if not matched_employee or not employee_id:
+        try:
+            from app.services.telegram_service import notify_checkin_event
+            notify_checkin_event({
+                "user_name": "Khách / Nhân viên",
+                "employee_code": "",
+                "formatted_time": get_vietnam_now().strftime("%H:%M:%S - %d/%m/%Y"),
+                "photo_path": photo_url,
+                "device_info": device_info
+            })
+        except Exception:
+            pass
+
         if photo_url:
             full_path = os.path.join(UPLOAD_DIR, os.path.basename(photo_url))
             if os.path.exists(full_path):
@@ -190,11 +202,10 @@ def record_checkin(
         first_checkin_time = first_log["formatted_time"]
         try:
             first_dt = datetime.fromisoformat(first_ts)
-            elapsed_secs = max(0, (now - first_dt).total_seconds())
-            hrs = int(elapsed_secs // 3600)
-            mins = int((elapsed_secs % 3600) // 60)
-            working_hours = round(elapsed_secs / 3600.0, 2)
-            working_duration = f"{hrs}h {mins}p" if hrs > 0 else f"{mins} phút"
+            from app.services.shift_service import calculate_working_duration
+            dur_calc = calculate_working_duration(first_dt, now)
+            working_hours = dur_calc["working_hours"]
+            working_duration = dur_calc["working_duration"]
         except Exception:
             working_hours = 0.0
             working_duration = "---"
@@ -236,6 +247,31 @@ def record_checkin(
     log_id = cursor.lastrowid
     conn.commit()
     conn.close()
+
+    # Gửi thông báo sự kiện qua Telegram Bot
+    try:
+        from app.services.telegram_service import notify_checkin_event
+        notify_checkin_event({
+            "id": log_id,
+            "timestamp": timestamp,
+            "formatted_time": formatted_time,
+            "photo_path": photo_url,
+            "employee_id": employee_id,
+            "employee_code": employee_code,
+            "user_name": final_name,
+            "gps_distance": gps_distance,
+            "gps_radius": gps_radius,
+            "gps_matched": gps_matched,
+            "gps_status": gps_status,
+            "check_type": check_type,
+            "working_duration": working_duration,
+            "attendance_status": attendance_status,
+            "late_minutes": late_minutes,
+            "early_minutes": early_minutes,
+            "device_info": device_info
+        })
+    except Exception:
+        pass
 
     return {
         "success": True,

@@ -33,6 +33,9 @@ export default function GpsCheckinView({ employees = [], initialSubTab = 'gps', 
   const [endTime, setEndTime] = useState('17:30');
   const [gracePeriod, setGracePeriod] = useState(15);
   const [earlyBuffer, setEarlyBuffer] = useState(0);
+  const [breakStartTime, setBreakStartTime] = useState('12:00');
+  const [breakEndTime, setBreakEndTime] = useState('13:30');
+  const [hasLunchBreak, setHasLunchBreak] = useState(true);
   const [isLoadingShift, setIsLoadingShift] = useState(true);
   const [isSavingShift, setIsSavingShift] = useState(false);
   const [shiftSuccessMsg, setShiftSuccessMsg] = useState(null);
@@ -96,6 +99,9 @@ export default function GpsCheckinView({ employees = [], initialSubTab = 'gps', 
         setEndTime(res.data.end_time || '17:30');
         setGracePeriod(Number(res.data.grace_period_minutes ?? 15));
         setEarlyBuffer(Number(res.data.early_leave_buffer_minutes ?? 0));
+        setBreakStartTime(res.data.break_start_time || '12:00');
+        setBreakEndTime(res.data.break_end_time || '13:30');
+        setHasLunchBreak(res.data.has_lunch_break !== undefined ? Boolean(res.data.has_lunch_break) : true);
       }
     } catch (err) {
       console.error("Lỗi khi tải cấu hình ca làm việc:", err);
@@ -346,12 +352,15 @@ export default function GpsCheckinView({ employees = [], initialSubTab = 'gps', 
         shift_name: shiftName,
         start_time: startTime,
         end_time: endTime,
-        grace_period_minutes: Number(gracePeriod),
-        early_leave_buffer_minutes: Number(earlyBuffer)
+        grace_period_minutes: Number(gracePeriod) || 0,
+        early_leave_buffer_minutes: Number(earlyBuffer) || 0,
+        break_start_time: breakStartTime,
+        break_end_time: breakEndTime,
+        has_lunch_break: Boolean(hasLunchBreak)
       };
       const res = await shiftApi.saveSettings(payload);
       if (res && res.success) {
-        setShiftSuccessMsg(`Đã lưu cấu hình: ${shiftName} (${startTime} - ${endTime}, ân hạn ${gracePeriod}p)`);
+        setShiftSuccessMsg(`Đã lưu cấu hình: ${shiftName} (${startTime} - ${endTime}, Nghỉ trưa ${breakStartTime} - ${breakEndTime})`);
         setTimeout(() => setShiftSuccessMsg(null), 5000);
       } else {
         setShiftErrorMsg(res.message || 'Lỗi khi lưu cấu hình ca');
@@ -694,6 +703,53 @@ export default function GpsCheckinView({ employees = [], initialSubTab = 'gps', 
               </div>
             </div>
 
+            {/* Cấu hình Giờ Nghỉ Trưa */}
+            <div style={{
+              background: 'rgba(16, 185, 129, 0.05)',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+              borderRadius: 12,
+              padding: '14px 18px',
+              marginBottom: 16
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: hasLunchBreak ? 12 : 0 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 800, fontSize: '0.9rem', color: '#059669' }}>
+                  <input
+                    type="checkbox"
+                    checked={hasLunchBreak}
+                    onChange={(e) => setHasLunchBreak(e.target.checked)}
+                  />
+                  <span>🍽️ Tự Động Trừ Giờ Nghỉ Trưa Khi Tính Công</span>
+                </label>
+              </div>
+
+              {hasLunchBreak && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 700 }}>Bắt Đầu Nghỉ Trưa</label>
+                    <input
+                      type="time"
+                      className="custom-input"
+                      value={breakStartTime}
+                      onChange={(e) => setBreakStartTime(e.target.value)}
+                      required={hasLunchBreak}
+                      style={{ padding: '9px 12px' }}
+                    />
+                  </div>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 700 }}>Kết Thúc Nghỉ Trưa</label>
+                    <input
+                      type="time"
+                      className="custom-input"
+                      value={breakEndTime}
+                      onChange={(e) => setBreakEndTime(e.target.value)}
+                      required={hasLunchBreak}
+                      style={{ padding: '9px 12px' }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Quy tắc tóm tắt & Đối soát tự động */}
             <div style={{
               background: 'rgba(253, 105, 0, 0.07)',
@@ -714,6 +770,11 @@ export default function GpsCheckinView({ employees = [], initialSubTab = 'gps', 
                 <li>
                   <b>Tan Ca:</b> Check-out trước <b>{endTime}</b> sẽ tự động ghi nhận là <span style={{ color: '#ef4444', fontWeight: 800 }}>Về Sớm</span> (tính số phút về sớm so với mốc {endTime}).
                 </li>
+                {hasLunchBreak && (
+                  <li>
+                    <b>Nghỉ Trưa:</b> Tự động trừ khoảng <b>{breakStartTime} - {breakEndTime}</b> khi tính thời lượng làm việc chuẩn.
+                  </li>
+                )}
               </ul>
             </div>
 

@@ -265,16 +265,13 @@ export default function CameraView({
         {liveMatch && (
           <div className="live-match-hud">
             {liveMatch.matched && liveMatch.employee ? (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden', minWidth: 0 }}>
-                  <ShieldCheck size={18} color="#FD6900" style={{ flexShrink: 0 }} />
-                  <div style={{ minWidth: 0 }}>
-                    <div className="hud-match-title">{liveMatch.employee.full_name}</div>
-                    <div className="hud-match-code">{liveMatch.employee.employee_code} • {liveMatch.employee.department}</div>
-                  </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden', minWidth: 0 }}>
+                <ShieldCheck size={18} color="#FD6900" style={{ flexShrink: 0 }} />
+                <div style={{ minWidth: 0 }}>
+                  <div className="hud-match-title">{liveMatch.employee.full_name}</div>
+                  <div className="hud-match-code">{liveMatch.employee.employee_code} • {liveMatch.employee.department}</div>
                 </div>
-                <div className="hud-confidence-badge">{liveMatch.confidence}%</div>
-              </>
+              </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 6 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#ef4444', fontSize: '0.78rem', fontWeight: 600 }}>

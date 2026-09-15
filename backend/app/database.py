@@ -242,6 +242,15 @@ def init_db():
         """)
 
     # Tự động migrate nếu bảng cũ thiếu cột
+    cursor.execute("PRAGMA table_info(shift_settings)")
+    shift_cols = [col[1] for col in cursor.fetchall()]
+    if "break_start_time" not in shift_cols:
+        cursor.execute("ALTER TABLE shift_settings ADD COLUMN break_start_time TEXT DEFAULT '12:00'")
+    if "break_end_time" not in shift_cols:
+        cursor.execute("ALTER TABLE shift_settings ADD COLUMN break_end_time TEXT DEFAULT '13:30'")
+    if "has_lunch_break" not in shift_cols:
+        cursor.execute("ALTER TABLE shift_settings ADD COLUMN has_lunch_break INTEGER DEFAULT 1")
+
     cursor.execute("PRAGMA table_info(employees)")
     emp_columns = [col[1] for col in cursor.fetchall()]
     if "face_descriptors" not in emp_columns:

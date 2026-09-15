@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Camera, Users, History, Clock, MapPin, Lock, ShieldCheck, LogOut } from 'lucide-react';
+import { Camera, Users, History, Clock, MapPin, Lock, ShieldCheck, LogOut, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import CameraView from './components/CameraView';
 import EmployeeManager from './components/employees/EmployeeManager';
 import LogTable from './components/LogTable';
@@ -12,12 +12,15 @@ import MiniGpsCard from './components/MiniGpsCard';
 import AdminLoginModal from './components/AdminLoginModal';
 import ShiftSetupModal from './components/ShiftSetupModal';
 import PermissionModal from './components/PermissionModal';
+import MonthlyReportModal from './components/MonthlyReportModal';
 
 import { employeeApi } from './api/employeeApi';
 import { checkinApi } from './api/checkinApi';
 import { logsApi } from './api/logsApi';
 import { systemApi } from './api/systemApi';
 import { authApi } from './api/authApi';
+import { useOfflineSync } from './hooks/useOfflineSync';
+import { offlineStorage } from './utils/offlineStorage';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('scanner'); // 'scanner' | 'employees' | 'logs' | 'gps'
@@ -41,6 +44,7 @@ export default function App() {
   const [attendanceFilter, setAttendanceFilter] = useState('all'); // 'all' | 'unexcused' | 'late' | 'early' | 'excused'
   const [gpsSubTab, setGpsSubTab] = useState('gps'); // 'gps' | 'shift'
   const [showShiftModal, setShowShiftModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [permissionModalItem, setPermissionModalItem] = useState(null);
   const [initialEnrollDescriptor, setInitialEnrollDescriptor] = useState(null);
 
@@ -119,10 +123,41 @@ export default function App() {
     return () => clearInterval(interval);
   }, [isAdmin, isAutoReload, fetchLogs]);
 
-  // Xử lý gửi Điểm danh
+  // Hook quản lý ngoại tuyến & tự động đồng bộ khi có mạng trở lại
+  const {
+    isOnline,
+    pendingCount,
+    isSyncing,
+    syncMessage,
+    refreshPendingCount,
+    syncNow
+  } = useOfflineSync(useCallback(() => {
+    if (isAdmin) {
+      fetchLogs(true);
+    }
+  }, [isAdmin, fetchLogs]));
+
+  // Xử lý gửi Điểm danh (Tự động hỗ trợ Ngoại tuyến khi mất mạng)
   const handleCheckinCapture = async (payload) => {
     setIsSubmitting(true);
     try {
+      // Nếu đang mất kết nối Internet, lưu tạm an toàn vào máy
+      if (!navigator.onLine) {
+        const saved = offlineStorage.savePending(payload);
+        refreshPendingCount();
+        setLatestResult({
+          id: saved.offline_id,
+          user_name: payload.user_name || 'Nhân viên',
+          employee_code: payload.employee_code || '',
+          formatted_time: saved.formatted_time,
+          gps_matched: null,
+          image_path: payload.image,
+          is_offline: true,
+          message: 'Đã lưu điểm danh ngoại tuyến an toàn vào thiết bị. Hệ thống sẽ tự động đồng bộ khi có kết nối mạng!'
+        });
+        return;
+      }
+
       const res = await checkinApi.submit(payload);
 
       if (res.success && res.data) {
@@ -136,8 +171,31 @@ export default function App() {
       }
     } catch (err) {
       console.error("Check-in error:", err);
-      setLatestResult(null);
-      alert(`❌ ${err.message || 'Lỗi khi gửi dữ liệu điểm danh'}`);
+      // Nếu là lỗi rớt mạng hoặc mất kết nối máy chủ, tự động lưu ngoại tuyến
+      const isNetworkErr = !navigator.onLine || 
+        err.message?.includes('Failed to fetch') || 
+        err.message?.includes('NetworkError') || 
+        err.message?.includes('kết nối') ||
+        err.message?.includes('502') ||
+        err.message?.includes('503');
+
+      if (isNetworkErr) {
+        const saved = offlineStorage.savePending(payload);
+        refreshPendingCount();
+        setLatestResult({
+          id: saved.offline_id,
+          user_name: payload.user_name || 'Nhân viên',
+          employee_code: payload.employee_code || '',
+          formatted_time: saved.formatted_time,
+          gps_matched: null,
+          image_path: payload.image,
+          is_offline: true,
+          message: 'Mất kết nối máy chủ! Đã lưu điểm danh vào bộ nhớ ngoại tuyến và sẽ tự động đồng bộ khi có mạng.'
+        });
+      } else {
+        setLatestResult(null);
+        alert(`❌ ${err.message || 'Lỗi khi gửi dữ liệu điểm danh'}`);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -211,6 +269,47 @@ export default function App() {
             </span>
           </div>
 
+          {/* Trạng thái Ngoại tuyến / Đồng bộ dữ liệu */}
+          {!isOnline ? (
+            <div 
+              className="meta-chip" 
+              style={{ 
+                backgroundColor: 'rgba(245, 158, 11, 0.15)', 
+                color: '#d97706', 
+                border: '1px solid #f59e0b',
+                fontWeight: 600
+              }} 
+              title="Đang mất kết nối mạng. Dữ liệu sẽ lưu trên máy và tự động đồng bộ khi có mạng."
+            >
+              <WifiOff size={14} color="#d97706" />
+              <span>Ngoại Tuyến ({pendingCount})</span>
+            </div>
+          ) : pendingCount > 0 ? (
+            <button
+              type="button"
+              onClick={syncNow}
+              disabled={isSyncing}
+              className="btn-secondary"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 12px',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                borderRadius: 8,
+                backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                color: '#10b981',
+                border: '1px solid #10b981',
+                cursor: 'pointer'
+              }}
+              title="Nhấn để đồng bộ dữ liệu ngoại tuyến lên máy chủ"
+            >
+              <RefreshCw size={13} style={{ animation: isSyncing ? 'spin 1s linear infinite' : 'none' }} />
+              <span>{isSyncing ? 'Đang đồng bộ...' : `Đồng bộ (${pendingCount})`}</span>
+            </button>
+          ) : null}
+
           {/* Nút Đăng Nhập / Đăng Xuất Quản Trị */}
           {!isAdmin ? (
             <button
@@ -268,6 +367,60 @@ export default function App() {
           )}
         </div>
       </header>
+
+      {/* Banner thông báo đồng bộ thành công hoặc trạng thái rớt mạng */}
+      {syncMessage && (
+        <div style={{
+          backgroundColor: 'rgba(16, 185, 129, 0.12)',
+          color: '#065f46',
+          border: '1px solid #10b981',
+          borderRadius: 8,
+          padding: '10px 16px',
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          fontSize: '0.88rem',
+          fontWeight: 600
+        }}>
+          <RefreshCw size={16} color="#10b981" />
+          <span>{syncMessage}</span>
+        </div>
+      )}
+
+      {!isOnline && (
+        <div style={{
+          backgroundColor: 'rgba(245, 158, 11, 0.15)',
+          color: '#92400e',
+          border: '1px solid #f59e0b',
+          borderRadius: 8,
+          padding: '10px 16px',
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: '0.88rem'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <WifiOff size={18} color="#d97706" />
+            <span>
+              <strong>Chế độ Ngoại Tuyến:</strong> Đang mất mạng Internet. Hệ thống vẫn cho phép điểm danh và lưu tạm an toàn trên máy!
+            </span>
+          </div>
+          {pendingCount > 0 && (
+            <span style={{
+              backgroundColor: '#d97706',
+              color: '#fff',
+              padding: '3px 8px',
+              borderRadius: 6,
+              fontWeight: 700,
+              fontSize: '0.78rem'
+            }}>
+              {pendingCount} lượt chờ đồng bộ
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Tabs Navigation */}
       <div className="app-tabs">
@@ -403,6 +556,7 @@ export default function App() {
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
           onExport={handleExport}
+          onOpenMonthlyReport={() => setShowReportModal(true)}
           isAutoReload={isAutoReload}
           setIsAutoReload={setIsAutoReload}
           attendanceFilter={attendanceFilter}
@@ -415,6 +569,14 @@ export default function App() {
           onOpenPermissionModal={(item) => setPermissionModalItem(item)}
         />
       )}
+
+      {/* Modal Báo Cáo Chấm Công Tháng HR */}
+      <MonthlyReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        employees={employees}
+        onExportCsv={handleExport}
+      />
 
       {/* Image Modal */}
       <ImageModal item={modalItem} onClose={() => setModalItem(null)} />

@@ -8,6 +8,9 @@ export default function ShiftSetupModal({ isOpen, onClose, onSaveSuccess }) {
   const [endTime, setEndTime] = useState('17:30');
   const [gracePeriod, setGracePeriod] = useState(15);
   const [earlyBuffer, setEarlyBuffer] = useState(0);
+  const [breakStartTime, setBreakStartTime] = useState('12:00');
+  const [breakEndTime, setBreakEndTime] = useState('13:30');
+  const [hasLunchBreak, setHasLunchBreak] = useState(true);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -26,6 +29,9 @@ export default function ShiftSetupModal({ isOpen, onClose, onSaveSuccess }) {
           setEndTime(res.data.end_time || '17:30');
           setGracePeriod(Number(res.data.grace_period_minutes ?? 15));
           setEarlyBuffer(Number(res.data.early_leave_buffer_minutes ?? 0));
+          setBreakStartTime(res.data.break_start_time || '12:00');
+          setBreakEndTime(res.data.break_end_time || '13:30');
+          setHasLunchBreak(res.data.has_lunch_break !== undefined ? Boolean(res.data.has_lunch_break) : true);
         }
       } catch (err) {
         console.error("Lỗi khi tải cấu hình ca:", err);
@@ -60,8 +66,11 @@ export default function ShiftSetupModal({ isOpen, onClose, onSaveSuccess }) {
         shift_name: shiftName,
         start_time: startTime,
         end_time: endTime,
-        grace_period_minutes: Number(gracePeriod),
-        early_leave_buffer_minutes: Number(earlyBuffer)
+        grace_period_minutes: Number(gracePeriod) || 0,
+        early_leave_buffer_minutes: Number(earlyBuffer) || 0,
+        break_start_time: breakStartTime,
+        break_end_time: breakEndTime,
+        has_lunch_break: Boolean(hasLunchBreak)
       };
       const res = await shiftApi.saveSettings(payload);
       if (res && res.success) {
@@ -231,6 +240,50 @@ export default function ShiftSetupModal({ isOpen, onClose, onSaveSuccess }) {
             </div>
           </div>
 
+          {/* Cấu hình Giờ Nghỉ Trưa */}
+          <div style={{
+            background: 'rgba(16, 185, 129, 0.05)',
+            border: '1px solid rgba(16, 185, 129, 0.25)',
+            borderRadius: 10,
+            padding: '12px 14px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: hasLunchBreak ? 10 : 0 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem', color: '#059669' }}>
+                <input
+                  type="checkbox"
+                  checked={hasLunchBreak}
+                  onChange={(e) => setHasLunchBreak(e.target.checked)}
+                />
+                <span>🍽️ Tự Động Trừ Giờ Nghỉ Trưa Khi Tính Công</span>
+              </label>
+            </div>
+
+            {hasLunchBreak && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.76rem' }}>Bắt Đầu Nghỉ Trưa</label>
+                  <input
+                    type="time"
+                    className="custom-input"
+                    value={breakStartTime}
+                    onChange={(e) => setBreakStartTime(e.target.value)}
+                    required={hasLunchBreak}
+                  />
+                </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '0.76rem' }}>Kết Thúc Nghỉ Trưa</label>
+                  <input
+                    type="time"
+                    className="custom-input"
+                    value={breakEndTime}
+                    onChange={(e) => setBreakEndTime(e.target.value)}
+                    required={hasLunchBreak}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Quy tắc tóm tắt & Preview */}
           <div style={{
             background: 'rgba(253, 105, 0, 0.06)',
@@ -251,6 +304,11 @@ export default function ShiftSetupModal({ isOpen, onClose, onSaveSuccess }) {
               <li>
                 <b>Tan Ca:</b> Check-out trước <b>{endTime}</b> sẽ được ghi nhận là <span style={{ color: '#ef4444', fontWeight: 700 }}>Về Sớm</span>.
               </li>
+              {hasLunchBreak && (
+                <li>
+                  <b>Nghỉ Trưa:</b> Tự động khấu trừ khoảng <b>{breakStartTime} - {breakEndTime}</b> khi tính thời lượng làm việc và tính công.
+                </li>
+              )}
             </ul>
           </div>
 

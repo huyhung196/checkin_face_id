@@ -18,20 +18,22 @@ import {
   AlertTriangle,
   SlidersHorizontal,
   CheckCircle2,
-  FileText
+  FileText,
+  FileSpreadsheet
 } from 'lucide-react';
 
 export default function LogTable({ 
   logs = [], 
-  isLoading, 
+  isLoading = false, 
   onRefresh, 
   onDelete, 
   onImageClick, 
-  search, 
+  search = '', 
   setSearch,
   selectedDate = '',
   setSelectedDate,
   onExport,
+  onOpenMonthlyReport,
   isAutoReload = true,
   setIsAutoReload,
   attendanceFilter = 'all',
@@ -110,12 +112,36 @@ export default function LogTable({
 
           <button 
             type="button" 
+            className="btn-primary"
+            onClick={onOpenMonthlyReport || onExport}
+            title="Báo cáo chấm công tháng thông minh (Gộp Check In - Check Out tự động theo mẫu HR)"
+            style={{
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              color: '#fff',
+              border: 'none',
+              padding: '6px 12px',
+              borderRadius: 8,
+              fontWeight: 600,
+              fontSize: '0.8rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
+              cursor: 'pointer'
+            }}
+          >
+            <FileSpreadsheet size={15} />
+            <span>Báo Cáo Tháng</span>
+          </button>
+
+          <button 
+            type="button" 
             className="btn-secondary"
             onClick={onExport}
-            title="Xuất file Excel CSV (theo ngày & trạng thái đang lọc)"
+            title="Xuất file CSV nhật ký thô (theo ngày & trạng thái đang lọc)"
           >
             <Download size={15} />
-            <span className="hide-on-mobile">Xuất Excel</span>
+            <span className="hide-on-mobile">Xuất CSV</span>
           </button>
         </div>
       </div>
@@ -291,14 +317,25 @@ export default function LogTable({
                       </td>
                       <td>
                         {row.check_type === 'Tan Ca' ? (
-                          <div>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
                             <span className="confidence-tag" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', fontWeight: 600 }}>
                               Tan Ca
                             </span>
                             {row.working_duration && row.working_duration !== '---' && (
-                              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2, fontWeight: 500 }}>
+                              <span 
+                                style={{ 
+                                  fontSize: '0.72rem', 
+                                  color: 'var(--text-muted)', 
+                                  fontWeight: 500,
+                                  background: 'rgba(100, 116, 139, 0.08)',
+                                  padding: '2px 6px',
+                                  borderRadius: 4,
+                                  border: '1px solid rgba(148, 163, 184, 0.2)'
+                                }}
+                                title={`Thời lượng làm việc: ${row.working_duration}`}
+                              >
                                 {row.working_duration}
-                              </div>
+                              </span>
                             )}
                           </div>
                         ) : row.check_type === 'Vào Ca' ? (
@@ -338,7 +375,7 @@ export default function LogTable({
                       {/* Cột Xin Phép (HR) */}
                       <td>
                         {isLate || isEarly ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
                             <button
                               type="button"
                               onClick={() => onOpenPermissionModal && onOpenPermissionModal(row)}
@@ -355,15 +392,28 @@ export default function LogTable({
                                 color: hasPerm ? '#059669' : '#ef4444',
                                 cursor: 'pointer',
                                 textAlign: 'left',
-                                width: 'fit-content'
+                                whiteSpace: 'nowrap'
                               }}
                             >
                               {hasPerm ? 'Đã có phép' : 'Chưa duyệt'}
                             </button>
                             {hasPerm && row.permission_note && (
-                              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontStyle: 'italic', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={row.permission_note}>
-                                {row.permission_note}
-                              </div>
+                              <span 
+                                style={{ 
+                                  fontSize: '0.72rem', 
+                                  color: 'var(--text-muted)', 
+                                  fontStyle: 'italic', 
+                                  maxWidth: 160, 
+                                  overflow: 'hidden', 
+                                  textOverflow: 'ellipsis', 
+                                  whiteSpace: 'nowrap',
+                                  display: 'inline-block',
+                                  verticalAlign: 'middle'
+                                }} 
+                                title={row.permission_note}
+                              >
+                                ({row.permission_note})
+                              </span>
                             )}
                           </div>
                         ) : (

@@ -65,6 +65,10 @@ class ShiftSettingsRequest(BaseModel):
     end_time: str = Field("17:30", description="Giờ kết thúc ca chuẩn (HH:MM)")
     grace_period_minutes: Optional[int] = Field(15, description="Số phút ân hạn cho phép trễ")
     early_leave_buffer_minutes: Optional[int] = Field(0, description="Số phút cho phép về sớm")
+    break_start_time: Optional[str] = Field("12:00", description="Giờ bắt đầu nghỉ trưa (HH:MM)")
+    break_end_time: Optional[str] = Field("13:30", description="Giờ kết thúc nghỉ trưa (HH:MM)")
+    has_lunch_break: Optional[bool] = Field(True, description="Có tự động trừ giờ nghỉ trưa hay không")
+
 
 
 class PermissionUpdateRequest(BaseModel):

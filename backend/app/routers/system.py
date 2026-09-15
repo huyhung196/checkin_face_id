@@ -21,3 +21,22 @@ def health_check():
         "service": "Face ID AI Check-in System",
         "time": get_vietnam_now().isoformat()
     }
+
+@router.get("/telegram/status")
+def telegram_status():
+    from app.services.telegram_service import get_telegram_config
+    return {
+        "success": True,
+        "data": get_telegram_config()
+    }
+
+@router.post("/telegram/test")
+def telegram_test():
+    from app.services.telegram_service import send_telegram_message
+    res = send_telegram_message(
+        "🔔 <b>[MEBIECO - KIỂM TRA KẾT NỐI]</b>\n"
+        "Hệ thống Điểm danh Face ID MEBIECO đã kết nối Telegram Bot thành công!\n"
+        "Sẵn sàng nhận thông báo và cảnh báo an ninh."
+    )
+    return res
+

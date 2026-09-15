@@ -23,7 +23,10 @@ def update_shift_settings(payload: ShiftSettingsRequest):
             start_time=payload.start_time,
             end_time=payload.end_time,
             grace_period_minutes=payload.grace_period_minutes or 0,
-            early_leave_buffer_minutes=payload.early_leave_buffer_minutes or 0
+            early_leave_buffer_minutes=payload.early_leave_buffer_minutes or 0,
+            break_start_time=payload.break_start_time or "12:00",
+            break_end_time=payload.break_end_time or "13:30",
+            has_lunch_break=payload.has_lunch_break if payload.has_lunch_break is not None else True
         )
         return res
     except Exception as e:
