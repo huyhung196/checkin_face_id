@@ -42,3 +42,7 @@ Thumbs.db
 # Temporary working folders
 checkin_face_id_/
 
+# Environment secrets
+.env
+backend/.env
+

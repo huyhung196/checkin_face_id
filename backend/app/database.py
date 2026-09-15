@@ -1,9 +1,135 @@
 import sqlite3
+import os
 import json
+import logging
 from typing import Dict, Any, List, Optional
-from app.config import DB_FILE
+from app.config import DB_FILE, TURSO_DATABASE_URL, TURSO_AUTH_TOKEN
+
+logger = logging.getLogger("database")
+
+class RowDict(dict):
+    """
+    Tương thích 100% với sqlite3.Row:
+    - Truy cập theo tên cột: row['employee_code']
+    - Truy cập theo chỉ số cột: row[1]
+    - Hỗ trợ dict(row)
+    - Hỗ trợ row.get('key', default)
+    """
+    def __init__(self, cols, vals):
+        super().__init__(zip(cols, vals))
+        self._vals = list(vals) if vals else []
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self._vals[key]
+        return super().__getitem__(key)
+
+
+class LibsqlCursorWrapper:
+    """Wrapper cho cursor của libsql để tương thích với API sqlite3 Cursor"""
+    def __init__(self, raw_cursor):
+        self._cur = raw_cursor
+
+    def execute(self, sql, params=()):
+        if params is None:
+            params = ()
+        return self._cur.execute(sql, params)
+
+    def executemany(self, sql, seq_of_params):
+        return self._cur.executemany(sql, seq_of_params)
+
+    def _get_cols(self):
+        if self._cur.description:
+            return [col[0] for col in self._cur.description]
+        return []
+
+    def fetchone(self):
+        r = self._cur.fetchone()
+        if r is None:
+            return None
+        return RowDict(self._get_cols(), r)
+
+    def fetchall(self):
+        rows = self._cur.fetchall()
+        cols = self._get_cols()
+        return [RowDict(cols, r) for r in rows]
+
+    def fetchmany(self, size=None):
+        rows = self._cur.fetchmany(size) if size is not None else self._cur.fetchmany()
+        cols = self._get_cols()
+        return [RowDict(cols, r) for r in rows]
+
+    @property
+    def lastrowid(self):
+        return getattr(self._cur, "lastrowid", None)
+
+    @property
+    def rowcount(self):
+        return getattr(self._cur, "rowcount", -1)
+
+    @property
+    def description(self):
+        return self._cur.description
+
+    def close(self):
+        return self._cur.close()
+
+    def __iter__(self):
+        cols = self._get_cols()
+        for r in self._cur:
+            yield RowDict(cols, r)
+
+
+class LibsqlConnectionWrapper:
+    """Wrapper cho connection của libsql"""
+    def __init__(self, raw_conn):
+        self._conn = raw_conn
+
+    def cursor(self):
+        return LibsqlCursorWrapper(self._conn.cursor())
+
+    def execute(self, sql, params=()):
+        cur = self.cursor()
+        cur.execute(sql, params)
+        return cur
+
+    def commit(self):
+        return self._conn.commit()
+
+    def rollback(self):
+        return self._conn.rollback()
+
+    def close(self):
+        return self._conn.close()
+
+    def sync(self):
+        if hasattr(self._conn, "sync"):
+            return self._conn.sync()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            self.rollback()
+        else:
+            self.commit()
+
 
 def get_db():
+    """
+    Khởi tạo kết nối CSDL:
+    - Nếu có TURSO_DATABASE_URL thì kết nối Turso Cloud SQLite (libSQL).
+    - Nếu không có, tự động fallback về SQLite file cục bộ (checkin.db).
+    """
+    if TURSO_DATABASE_URL:
+        try:
+            import libsql
+            raw_conn = libsql.connect(TURSO_DATABASE_URL, auth_token=TURSO_AUTH_TOKEN)
+            return LibsqlConnectionWrapper(raw_conn)
+        except Exception as e:
+            logger.error(f"[DATABASE] Lỗi kết nối Turso ({TURSO_DATABASE_URL}): {e}. Chuyển về SQLite cục bộ.")
+    
     conn = sqlite3.connect(DB_FILE, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn

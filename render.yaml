@@ -13,3 +13,7 @@ services:
         value: 20.12.2
       - key: TZ
         value: Asia/Ho_Chi_Minh
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
